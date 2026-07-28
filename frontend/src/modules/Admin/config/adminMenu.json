@@ -53,6 +53,14 @@
     ]
   },
   {
+    "title": "Influencers",
+    "route": "/admin/influencers",
+    "children": [
+      "Manage Influencers",
+      "Pending Applications"
+    ]
+  },
+  {
     "title": "Social Control",
     "route": "/admin",
     "children": [

@@ -20,6 +20,7 @@ import * as policyController from '../controllers/policy.controller.js';
 import * as reelController from '../controllers/reel.controller.js';
 import * as affiliateController from '../controllers/affiliate.controller.js';
 import * as escrowController from '../controllers/escrow.controller.js';
+import * as influencerAdminController from '../controllers/influencer.controller.js';
 import logisticsRoutes from './logistics.routes.js';
 import AppConfig from '../../../models/AppConfig.model.js';
 import ApiResponse from '../../../utils/ApiResponse.js';
@@ -316,6 +317,12 @@ router.patch('/affiliates/:id/payouts/:payoutId', ...adminAuth, audit('PROCESS_A
 router.get('/escrow/summary',                  ...adminAuth, escrowController.getEscrowSummary);
 router.get('/escrow/withdrawals',              ...adminAuth, escrowController.getWithdrawalRequests);
 router.patch('/escrow/withdrawals/:id/status', ...adminAuth, audit('PROCESS_VENDOR_WITHDRAWAL', 'Withdrawal'), escrowController.updateWithdrawalStatus);
+
+// ─── Influencers Management ───────────────────────────────────────────────────
+router.get('/influencers', ...adminAuth, influencerAdminController.getAllInfluencers);
+router.get('/influencers/:id', ...adminAuth, influencerAdminController.getInfluencerById);
+router.patch('/influencers/:id/status', ...adminAuth, audit('UPDATE_INFLUENCER_STATUS', 'Influencer'), influencerAdminController.updateInfluencerStatus);
+router.post('/influencers/bulk-status', ...adminAuth, audit('BULK_UPDATE_INFLUENCER_STATUS', 'Influencer'), influencerAdminController.bulkUpdateInfluencerStatus);
 
 // ─── Logistics Management ────────────────────────────────────────────────────
 router.use('/logistics', ...adminAuth, logisticsRoutes);

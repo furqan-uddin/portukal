@@ -6,6 +6,7 @@ import { createServer } from "http";
 import { initSocket } from "./services/socket.service.js";
 import { initAssignmentScheduler } from "./services/assignmentService.js";
 import { initLogisticsListeners } from "./events/index.js";
+import { seedDefaultAdmin } from "./utils/seedAdmin.js";
 
 const PORT = process.env.PORT || 5000;
 const httpServer = createServer(app);
@@ -17,6 +18,9 @@ const startServer = async () => {
   try {
     validateEnv();
     await connectDB();
+
+    // Seed default admin account if not already present
+    await seedDefaultAdmin();
 
     // Initialize logistics event bus (must be after connectDB — listeners may query DB)
     initLogisticsListeners();
@@ -74,5 +78,3 @@ const startServer = async () => {
 };
 
 startServer();
-
-// Server initialized

@@ -36,6 +36,7 @@ const iconMap = {
   Categories: FiGrid,
   Brands: FiTag,
   Customers: FiUsers,
+  Influencers: FiUsers,
   "Delivery Management": FiTruck,
   Marketing: FiImage,
   Notifications: FiBell,
@@ -72,6 +73,10 @@ const getChildRoute = (parentRoute, childName) => {
       "View Customers": "/admin/customers/view-customers",
       Addresses: "/admin/customers/addresses",
       Transactions: "/admin/customers/transactions",
+    },
+    "/admin/influencers": {
+      "Manage Influencers": "/admin/influencers",
+      "Pending Applications": "/admin/influencers?status=pending",
     },
     "/admin/delivery": {
       "Delivery Boys": "/admin/delivery/delivery-boys",
@@ -315,10 +320,11 @@ const AdminSidebar = ({ isOpen, onClose, isCollapsed }) => {
               <div className="ml-4 mt-1 pl-4 border-l-2 border-slate-700 space-y-1">
                 {item.children.map((child, index) => {
                   const childRoute = getChildRoute(item.route, child);
-                  const isChildActive =
-                    location.pathname === childRoute ||
-                    (childRoute !== item.route &&
-                      location.pathname.startsWith(childRoute));
+                  const currentFullUrl = location.pathname + location.search;
+                  const isChildActive = childRoute.includes('?')
+                    ? currentFullUrl === childRoute
+                    : (location.pathname === childRoute && !location.search) ||
+                      (childRoute !== item.route && location.pathname.startsWith(childRoute) && !childRoute.includes('?'));
 
                   return (
                     <div

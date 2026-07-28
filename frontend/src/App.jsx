@@ -83,6 +83,7 @@ import InventoryReport from "./modules/Admin/pages/reports/InventoryReport";
 import RevenueOverview from "./modules/Admin/pages/finance/RevenueOverview";
 import ProfitLoss from "./modules/Admin/pages/finance/ProfitLoss";
 import EscrowDashboard from "./modules/Admin/pages/finance/EscrowDashboard";
+import AdminInfluencers from "./modules/Admin/pages/Influencers";
 import OrderTrends from "./modules/Admin/pages/finance/OrderTrends";
 import PaymentBreakdown from "./modules/Admin/pages/finance/PaymentBreakdown";
 import TaxReports from "./modules/Admin/pages/finance/TaxReports";
@@ -205,6 +206,9 @@ import VendorReports from "./modules/Vendor/pages/Reports";
 import VendorLanguageSettings from "./modules/Vendor/pages/LanguageSettings";
 import MobileStorefront from "./modules/UserApp/pages/Storefront";
 import VendorStoreManager from "./modules/Vendor/pages/VendorStoreManager";
+import InfluencerAuthPage from "./modules/Influencer/pages/AuthPage";
+import InfluencerProtectedRoute from "./modules/Influencer/components/InfluencerProtectedRoute";
+import InfluencerDashboard from "./modules/Influencer/Dashboard/InfluencerDashboard";
 
 // Inner component that has access to useLocation
 const AppRoutes = () => {
@@ -672,6 +676,7 @@ const AppRoutes = () => {
         <Route path="customers/addresses" element={<CustomerAddresses />} />
         <Route path="customers/transactions" element={<Transactions />} />
         <Route path="customers/:id" element={<CustomerDetailPage />} />
+        <Route path="influencers" element={<AdminInfluencers />} />
         
         {/* Social Control Routes */}
         <Route path="reels" element={<ReelModeration />} />
@@ -861,6 +866,20 @@ const AppRoutes = () => {
         <Route path="profile" element={<VendorProfile />} />
         <Route path="store-builder" element={<VendorStoreManager />} />
       </Route>
+
+      {/* Influencer Routes */}
+      <Route path="/influence" element={<InfluencerAuthPage />} />
+      <Route
+        path="/influence/dashboard"
+        element={
+          <InfluencerProtectedRoute>
+            <ErrorBoundary>
+              <InfluencerDashboard />
+            </ErrorBoundary>
+          </InfluencerProtectedRoute>
+        }
+      />
+
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );

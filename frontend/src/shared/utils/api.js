@@ -27,6 +27,14 @@ const AUTH_SCOPES = {
     loginPath: '/delivery/login',
     areaPrefix: '/delivery',
   },
+  influencer: {
+    prefix: '/influencer',
+    accessKey: 'influencer-token',
+    refreshKey: 'influencer-refresh-token',
+    persistKey: 'influencer-auth-storage',
+    loginPath: '/influence',
+    areaPrefix: '/influence',
+  },
   user: {
     prefix: '/user',
     accessKey: 'token',
@@ -83,6 +91,7 @@ const getScopeFromUrl = (url = '') => {
   if (url.startsWith('/admin')) return 'admin';
   if (url.startsWith('/vendor')) return 'vendor';
   if (url.startsWith('/delivery')) return 'delivery';
+  if (url.startsWith('/influencer')) return 'influencer';
   return 'user';
 };
 
@@ -90,6 +99,7 @@ const getScopeFromPath = (path = window.location.pathname) => {
   if (path.startsWith('/admin')) return 'admin';
   if (path.startsWith('/vendor')) return 'vendor';
   if (path.startsWith('/delivery')) return 'delivery';
+  if (path.startsWith('/influence')) return 'influencer';
   return 'user';
 };
 

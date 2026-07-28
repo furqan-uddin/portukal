@@ -73,8 +73,6 @@ export const updateProduct = (id, data) =>
 export const deleteProduct = (id) =>
     api.delete(`/admin/products/${id}`);
 
-
-
 // ─── Categories ───────────────────────────────────────────────────────────────
 export const getAllCategories = () =>
     api.get('/admin/categories');
@@ -155,6 +153,19 @@ export const updateVendorDocumentStatus = (vendorId, docId, status, remarks = ''
 
 export const bulkUpdateVendorDocumentStatus = (vendorId, docIds, status, remarks = '') =>
     api.post(`/admin/vendors/${vendorId}/documents/bulk-status`, { docIds, status, remarks });
+
+// ─── Influencers ──────────────────────────────────────────────────────────────
+export const getAdminInfluencers = (params = {}) =>
+    api.get('/admin/influencers', { params });
+
+export const getAdminInfluencerById = (id) =>
+    api.get(`/admin/influencers/${id}`);
+
+export const updateAdminInfluencerStatus = (id, status, rejectionReason = '') =>
+    api.patch(`/admin/influencers/${id}/status`, { status, rejectionReason });
+
+export const bulkUpdateAdminInfluencerStatus = (ids, status, rejectionReason = '') =>
+    api.post('/admin/influencers/bulk-status', { ids, status, rejectionReason });
 
 // ─── Customers ────────────────────────────────────────────────────────────────
 export const getAllCustomers = (params = {}) =>
