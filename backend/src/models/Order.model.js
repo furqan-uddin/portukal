@@ -162,6 +162,12 @@ const orderSchema = new mongoose.Schema(
         deliveryPayoutProcessed: { type: Boolean, default: false, index: true },
         deliveryPayoutProcessedAt: Date,
         cashSettlementId: { type: mongoose.Schema.Types.ObjectId, ref: 'CashSettlement' },
+        
+        // ─── Influencer & Referral Tracking ─────────────────────────
+        influencerId: { type: mongoose.Schema.Types.ObjectId, ref: 'Influencer', index: true },
+        affiliateLinkId: { type: mongoose.Schema.Types.ObjectId, ref: 'AffiliateLink', index: true },
+        referralCode: { type: String, index: true },
+        referralClickId: { type: mongoose.Schema.Types.ObjectId, ref: 'ReferralClick', index: true },
     },
     { timestamps: true }
 );

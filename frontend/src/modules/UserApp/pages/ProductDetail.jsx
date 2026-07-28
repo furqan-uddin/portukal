@@ -37,6 +37,7 @@ import Badge from "../../../shared/components/Badge";
 import ProductCard from "../../../shared/components/ProductCard";
 import { getVariantSignature } from "../../../shared/utils/variant";
 import AffiliateBadge from "../../Affiliate/components/AffiliateBadge";
+import { trackReferralClick } from "../../Influencer/services/influencerMarketplaceService";
 
 const FlipkartCompactCard = ({ product }) => {
   const navigate = useNavigate();
@@ -532,6 +533,29 @@ const MobileProductDetail = () => {
   useEffect(() => {
     setIsExpanded(false);
   }, [activeTab]);
+
+  useEffect(() => {
+    const refCode = searchParams.get("ref");
+    if (refCode && product?.slug) {
+      trackReferralClick({
+        referralCode: refCode,
+        productSlug: product.slug,
+      }).then((res) => {
+        const data = res?.data || res;
+        if (data?.valid) {
+          const referralMetadata = {
+            influencerId: data.influencerId,
+            affiliateLinkId: data.affiliateLinkId,
+            referralCode: data.referralCode,
+            referralClickId: data.referralClickId,
+            expiry: Date.now() + 30 * 24 * 60 * 60 * 1000,
+          };
+          localStorage.setItem('porutkal_referral', JSON.stringify(referralMetadata));
+          document.cookie = `porutkal_ref=${encodeURIComponent(JSON.stringify(referralMetadata))}; max-age=${30 * 24 * 60 * 60}; path=/; SameSite=Lax`;
+        }
+      }).catch(err => console.error("Referral tracking error:", err));
+    }
+  }, [searchParams, product?.slug]);
 
   useEffect(() => {
     if (product?.id) {

@@ -37,6 +37,10 @@ import {
     updateAdminInfluencerStatus,
     bulkUpdateAdminInfluencerStatus,
 } from '../services/adminService';
+import {
+    getGlobalCommissionSettings,
+    updateGlobalCommissionSettings,
+} from '../../Influencer/services/influencerMarketplaceService';
 
 const Influencers = () => {
     const [searchParams, setSearchParams] = useSearchParams();
@@ -73,6 +77,48 @@ const Influencers = () => {
     const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
     const [rejectionReason, setRejectionReason] = useState('');
     const [isActionSubmitting, setIsActionSubmitting] = useState(false);
+
+    // Admin Commission Settings modal state
+    const [isCommSettingsModalOpen, setIsCommSettingsModalOpen] = useState(false);
+    const [minComm, setMinComm] = useState(2);
+    const [maxComm, setMaxComm] = useState(20);
+    const [defaultComm, setDefaultComm] = useState(5);
+    const [commEnabled, setCommEnabled] = useState(true);
+    const [savingComm, setSavingComm] = useState(false);
+
+    const fetchCommSettings = async () => {
+        try {
+            const res = await getGlobalCommissionSettings();
+            const data = res?.data || res;
+            if (data) {
+                setMinComm(data.minCommissionPercent || 2);
+                setMaxComm(data.maxCommissionPercent || 20);
+                setDefaultComm(data.defaultCommissionPercent || 5);
+                setCommEnabled(data.isEnabled !== false);
+            }
+        } catch (err) {
+            console.error('Failed to load global commission settings:', err);
+        }
+    };
+
+    const handleSaveCommSettings = async (e) => {
+        e.preventDefault();
+        setSavingComm(true);
+        try {
+            await updateGlobalCommissionSettings({
+                minCommissionPercent: Number(minComm),
+                maxCommissionPercent: Number(maxComm),
+                defaultCommissionPercent: Number(defaultComm),
+                isEnabled: commEnabled,
+            });
+            toast.success('Admin commission bounds updated successfully!');
+            setIsCommSettingsModalOpen(false);
+        } catch (err) {
+            toast.error(err?.response?.data?.message || 'Failed to update settings.');
+        } finally {
+            setSavingComm(false);
+        }
+    };
 
     const fetchInfluencers = async () => {
         setLoading(true);
@@ -348,6 +394,16 @@ const Influencers = () => {
                             <option value="10k-50k">10,000 - 50,000</option>
                             <option value="50k+">50,000+ Followers</option>
                         </select>
+
+                        <button
+                            onClick={() => {
+                                fetchCommSettings();
+                                setIsCommSettingsModalOpen(true);
+                            }}
+                            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-purple-100 hover:bg-purple-200 text-purple-800 font-bold text-xs transition-colors border border-purple-200"
+                        >
+                            <FiPercent className="w-3.5 h-3.5 text-purple-600" /> Commission Bounds
+                        </button>
 
                         <button
                             onClick={exportToCSV}
@@ -844,6 +900,89 @@ const Influencers = () => {
                                 Confirm Rejection
                             </button>
                         </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Admin Commission Bounds Settings Modal */}
+            {isCommSettingsModalOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
+                    <div className="bg-white rounded-2xl max-w-md w-full p-6 relative shadow-2xl border border-slate-100">
+                        <button
+                            onClick={() => setIsCommSettingsModalOpen(false)}
+                            className="absolute right-4 top-4 text-slate-400 hover:text-slate-600 p-1 rounded-lg"
+                        >
+                            <FiX className="w-5 h-5" />
+                        </button>
+
+                        <h3 className="font-bold text-lg text-slate-900 mb-1">Global Commission Bounds Settings</h3>
+                        <p className="text-xs text-slate-500 mb-4">Configure minimum and maximum commission bounds enforced across all vendors.</p>
+
+                        <form onSubmit={handleSaveCommSettings} className="space-y-4 text-xs">
+                            <div className="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label className="font-bold text-slate-700 block mb-1">Min Commission (%)</label>
+                                    <input
+                                        type="number"
+                                        min="0"
+                                        max="100"
+                                        value={minComm}
+                                        onChange={(e) => setMinComm(e.target.value)}
+                                        className="w-full p-2.5 rounded-xl border border-slate-200 text-sm font-bold bg-slate-50"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="font-bold text-slate-700 block mb-1">Max Commission (%)</label>
+                                    <input
+                                        type="number"
+                                        min="0"
+                                        max="100"
+                                        value={maxComm}
+                                        onChange={(e) => setMaxComm(e.target.value)}
+                                        className="w-full p-2.5 rounded-xl border border-slate-200 text-sm font-bold bg-slate-50"
+                                    />
+                                </div>
+                            </div>
+
+                            <div>
+                                <label className="font-bold text-slate-700 block mb-1">Default Marketplace Rate (%)</label>
+                                <input
+                                    type="number"
+                                    min="0"
+                                    max="100"
+                                    value={defaultComm}
+                                    onChange={(e) => setDefaultComm(e.target.value)}
+                                    className="w-full p-2.5 rounded-xl border border-slate-200 text-sm font-bold bg-slate-50"
+                                />
+                            </div>
+
+                            <div className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-200">
+                                <span className="font-bold text-slate-800">Enable Influencer Affiliate Program</span>
+                                <input
+                                    type="checkbox"
+                                    checked={commEnabled}
+                                    onChange={(e) => setCommEnabled(e.target.checked)}
+                                    className="w-4 h-4 rounded text-purple-600 focus:ring-purple-500"
+                                />
+                            </div>
+
+                            <div className="flex gap-3 justify-end pt-2">
+                                <button
+                                    type="button"
+                                    onClick={() => setIsCommSettingsModalOpen(false)}
+                                    className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="submit"
+                                    disabled={savingComm}
+                                    className="px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs shadow-md shadow-purple-200"
+                                >
+                                    {savingComm ? 'Saving...' : 'Save Settings'}
+                                </button>
+                            </div>
+                        </form>
                     </div>
                 </div>
             )}

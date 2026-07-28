@@ -455,6 +455,29 @@ const MobileCheckout = () => {
           variantKey: item.variantKey || null,
         }));
 
+        // Retrieve stored influencer referral metadata if active (localStorage or cookie)
+        let referralParams = {};
+        try {
+          let storedRef = localStorage.getItem('porutkal_referral');
+          if (!storedRef) {
+            const match = document.cookie.match(/porutkal_ref=([^;]+)/);
+            if (match) storedRef = decodeURIComponent(match[1]);
+          }
+          if (storedRef) {
+            const parsed = JSON.parse(storedRef);
+            if (parsed && (!parsed.expiry || parsed.expiry > Date.now())) {
+              referralParams = {
+                influencerId: parsed.influencerId,
+                affiliateLinkId: parsed.affiliateLinkId,
+                referralCode: parsed.referralCode,
+                referralClickId: parsed.referralClickId,
+              };
+            }
+          }
+        } catch (e) {
+          console.error("Error parsing referral metadata:", e);
+        }
+
         // Call payment/initialize for all payment methods (COD included)
         const initData = await api.post("/user/payment/initialize", {
           items: itemsPayload,
@@ -466,6 +489,7 @@ const MobileCheckout = () => {
           shippingOption,
           shippingQuotes,
           useWallet,
+          ...referralParams,
         });
 
         const payload = initData?.data ?? initData;

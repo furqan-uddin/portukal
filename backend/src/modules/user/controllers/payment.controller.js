@@ -40,6 +40,10 @@ export const initializePayment = asyncHandler(async (req, res) => {
         shippingOption,
         shippingQuotes,
         idempotencyKey,
+        influencerId,
+        affiliateLinkId,
+        referralCode,
+        referralClickId,
     } = req.body;
 
     const userId = req.user?.id;
@@ -303,6 +307,10 @@ export const initializePayment = asyncHandler(async (req, res) => {
                     estimatedDelivery: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000),
                     invoiceNumber: `INV-${orderId}`,
                     invoiceDate: new Date(),
+                    influencerId: influencerId || undefined,
+                    affiliateLinkId: affiliateLinkId || undefined,
+                    referralCode: referralCode || undefined,
+                    referralClickId: referralClickId || undefined,
                 }], { session });
                 order = createdOrder;
 
@@ -576,6 +584,10 @@ export const initializePayment = asyncHandler(async (req, res) => {
                 invoiceDate: new Date(),
                 // Store coupon info for use at webhook time
                 couponId: appliedCoupon?._id,
+                influencerId: influencerId || undefined,
+                affiliateLinkId: affiliateLinkId || undefined,
+                referralCode: referralCode || undefined,
+                referralClickId: referralClickId || undefined,
             }], { session });
             order = createdOrder;
 

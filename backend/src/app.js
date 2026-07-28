@@ -14,6 +14,10 @@ import adminRoutes from './modules/admin/routes/admin.routes.js';
 import vendorRoutes from './modules/vendor/routes/vendor.routes.js';
 import deliveryRoutes from './modules/delivery/routes/delivery.routes.js';
 import influencerRoutes from './modules/influencer/routes/influencer.routes.js';
+import influencerMarketplaceRoutes from './modules/influencer/routes/influencerMarketplace.routes.js';
+import affiliateLinkRoutes from './modules/influencer/routes/affiliateLink.routes.js';
+import referralRoutes from './modules/influencer/routes/referral.routes.js';
+import commissionConfigRoutes from './modules/influencer/routes/commissionConfig.routes.js';
 import webhookRouter from './modules/user/routes/webhook.routes.js';
 import paymentRouter from './modules/user/routes/payment.routes.js';
 
@@ -117,6 +121,10 @@ app.use('/api/admin', adminRoutes);                  // Admin: auth, vendors, or
 app.use('/api/vendor', vendorRoutes);                // Vendor: auth, products, orders, earnings
 app.use('/api/delivery', deliveryRoutes);            // Delivery: auth, orders
 app.use('/api/influencer', influencerRoutes);          // Influencer: auth, profile, dashboard
+app.use('/api/influencer', influencerMarketplaceRoutes);
+app.use('/api/influencer/affiliate-links', affiliateLinkRoutes);
+app.use('/api/influencer/commission-settings', commissionConfigRoutes);
+app.use('/api/referrals', referralRoutes);
 
 // ─── Error Handling ──────────────────────────────────────────────────────────
 app.use(notFound);

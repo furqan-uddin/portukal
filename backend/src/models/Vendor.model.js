@@ -23,6 +23,11 @@ const vendorSchema = new mongoose.Schema(
         },
         suspensionReason: { type: String },
         commissionRate: { type: Number, default: 10, min: 0, max: 100 },
+        influencerProgram: {
+            enabled: { type: Boolean, default: true },
+            defaultCommissionPercent: { type: Number, default: 5, min: 0, max: 100 },
+            allowProductOverride: { type: Boolean, default: true },
+        },
         isVerified: { type: Boolean, default: false },
         rating: { type: Number, default: 0 },
         reviewCount: { type: Number, default: 0 },

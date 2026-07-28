@@ -51,6 +51,8 @@ const productSchema = new mongoose.Schema(
         codAllowed: { type: Boolean, default: true },
         returnable: { type: Boolean, default: true },
         cancelable: { type: Boolean, default: true },
+        allowInfluencer: { type: Boolean, default: true, index: true },
+        influencerCommission: { type: Number, min: 0, max: 100 },
 
         // ─── Logistics / Shipping ─────────────────────────────────────────
         // Required by courier providers (Shiprocket, Delhivery, etc.) for rate

@@ -34,3 +34,10 @@ export const influencerAuthenticate = asyncHandler(async (req, res, next) => {
         throw new ApiError(401, 'Invalid or expired influencer token.');
     }
 });
+
+export const enforceApprovedInfluencer = (req, res, next) => {
+    if (!req.influencer || req.influencer.status !== 'approved' || !req.influencer.isActive) {
+        throw new ApiError(403, 'Access denied. Only approved and active influencers can access this feature.');
+    }
+    next();
+};

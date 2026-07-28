@@ -209,6 +209,11 @@ import VendorStoreManager from "./modules/Vendor/pages/VendorStoreManager";
 import InfluencerAuthPage from "./modules/Influencer/pages/AuthPage";
 import InfluencerProtectedRoute from "./modules/Influencer/components/InfluencerProtectedRoute";
 import InfluencerDashboard from "./modules/Influencer/Dashboard/InfluencerDashboard";
+import InfluencerLayout from "./modules/Influencer/components/InfluencerLayout";
+import InfluencerMarketplace from "./modules/Influencer/pages/Marketplace";
+import InfluencerMarketplaceProductDetail from "./modules/Influencer/pages/MarketplaceProductDetail";
+import InfluencerAffiliateLinks from "./modules/Influencer/pages/AffiliateLinks";
+import VendorInfluencerSettings from "./modules/Vendor/pages/VendorInfluencerSettings";
 
 // Inner component that has access to useLocation
 const AppRoutes = () => {
@@ -865,20 +870,27 @@ const AppRoutes = () => {
         <Route path="settings/profile" element={<VendorProfile />} />
         <Route path="profile" element={<VendorProfile />} />
         <Route path="store-builder" element={<VendorStoreManager />} />
+        <Route path="marketing/influencer-program" element={<VendorInfluencerSettings />} />
+        <Route path="influencer-settings" element={<VendorInfluencerSettings />} />
       </Route>
 
       {/* Influencer Routes */}
       <Route path="/influence" element={<InfluencerAuthPage />} />
       <Route
-        path="/influence/dashboard"
+        path="/influence/*"
         element={
           <InfluencerProtectedRoute>
             <ErrorBoundary>
-              <InfluencerDashboard />
+              <InfluencerLayout />
             </ErrorBoundary>
           </InfluencerProtectedRoute>
         }
-      />
+      >
+        <Route path="dashboard" element={<InfluencerDashboard />} />
+        <Route path="marketplace" element={<InfluencerMarketplace />} />
+        <Route path="product/:slug" element={<InfluencerMarketplaceProductDetail />} />
+        <Route path="affiliate-links" element={<InfluencerAffiliateLinks />} />
+      </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
