@@ -22,7 +22,7 @@ const InfluencerLayout = () => {
             
             <div className={`flex-1 flex flex-col min-w-0 max-w-full transition-all duration-300 ${isCollapsed ? 'md:ml-0' : 'md:ml-64'}`}>
                 {/* Fixed Header */}
-                <header className={`bg-white/90 backdrop-blur-md border-b border-slate-200/80 fixed top-0 right-0 z-30 transition-all duration-300 shadow-sm flex items-center justify-between px-4 lg:px-6 h-16 ${isCollapsed ? 'left-0' : 'left-0 md:left-64'}`}>
+                <header className={`bg-white/90 backdrop-blur-md border-b border-slate-200/80 fixed top-0 right-0 z-50 transition-all duration-300 shadow-sm flex items-center justify-between px-4 lg:px-6 h-16 ${isCollapsed ? 'left-0' : 'left-0 md:left-64'}`}>
                     <div className="flex items-center gap-3">
                         <button 
                             className="p-2 -ml-2 text-slate-500 hover:bg-slate-100 rounded-lg transition-colors"
