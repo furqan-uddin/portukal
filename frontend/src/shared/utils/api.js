@@ -95,10 +95,16 @@ const redirectTo = (path) => {
 };
 
 const getScopeFromUrl = (url = '') => {
-  if (url.startsWith('/admin')) return 'admin';
-  if (url.startsWith('/vendor')) return 'vendor';
-  if (url.startsWith('/delivery')) return 'delivery';
-  if (url.startsWith('/influencer')) return 'influencer';
+  if (url.includes('/admin') || url.startsWith('/admin')) return 'admin';
+  if (url.includes('/vendor') || url.startsWith('/vendor')) return 'vendor';
+  if (url.includes('/delivery') || url.startsWith('/delivery')) return 'delivery';
+  if (url.includes('/influencer') || url.startsWith('/influencer')) return 'influencer';
+
+  const pathScope = getScopeFromPath(typeof window !== 'undefined' ? window.location.pathname : '');
+  if (pathScope && pathScope !== 'user') {
+    return pathScope;
+  }
+
   return 'user';
 };
 
@@ -112,7 +118,7 @@ const getScopeFromPath = (path = window.location.pathname) => {
 
 const isExcludedAuthRequest = (scope, url = '') => {
   const { prefix } = AUTH_SCOPES[scope];
-  return EXCLUDED_AUTH_SUFFIXES.some((suffix) => url.startsWith(`${prefix}${suffix}`));
+  return EXCLUDED_AUTH_SUFFIXES.some((suffix) => url.startsWith(`${prefix}${suffix}`) || url.endsWith(suffix) || url.includes(suffix));
 };
 
 const clearScopeAuth = (scope) => {
