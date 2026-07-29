@@ -99,6 +99,7 @@ const getScopeFromUrl = (url = '') => {
   if (url.includes('/vendor') || url.startsWith('/vendor')) return 'vendor';
   if (url.includes('/delivery') || url.startsWith('/delivery')) return 'delivery';
   if (url.includes('/influencer') || url.startsWith('/influencer')) return 'influencer';
+  if (url.includes('/user') || url.startsWith('/user')) return 'user';
 
   const pathScope = getScopeFromPath(typeof window !== 'undefined' ? window.location.pathname : '');
   if (pathScope && pathScope !== 'user') {
