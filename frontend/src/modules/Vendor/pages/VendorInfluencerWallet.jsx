@@ -71,7 +71,7 @@ const VendorInfluencerWallet = () => {
                 <div>
                     <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2.5">
                         <FiAward className="text-purple-600" />
-                        Influencer Commission Wallet & Financial Ledger
+                        Affiliate Commission Escrow & Ledger
                     </h1>
                     <p className="text-sm text-slate-500 mt-1">
                         Track reserved commissions, settlement releases, and immutable transaction logs for promotional affiliate sales.

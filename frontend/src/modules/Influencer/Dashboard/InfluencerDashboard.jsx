@@ -32,7 +32,7 @@ const InfluencerDashboard = () => {
     return (
         <div className="min-h-screen bg-slate-50 text-slate-900 font-sans flex flex-col">
             {/* Top Navigation Header */}
-            <header className="bg-white border-b border-slate-200 sticky top-0 z-40 px-6 py-4 flex items-center justify-between shadow-sm">
+            <header className="bg-white border-b border-slate-200 sticky top-0 z-20 px-6 py-4 flex items-center justify-between shadow-sm">
                 <div className="flex items-center gap-3">
                     <div className="w-9 h-9 rounded-xl bg-purple-600 flex items-center justify-center text-white font-bold shadow-md shadow-purple-200">
                         <Sparkles className="w-5 h-5" />
