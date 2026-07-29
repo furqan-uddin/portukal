@@ -56,6 +56,8 @@ const ProductFormModal = ({ isOpen, onClose, productId, onSuccess }) => {
     codAllowed: true,
     returnable: true,
     cancelable: true,
+    allowInfluencer: true,
+    influencerCommission: "",
     taxIncluded: false,
     taxRate: 18,
     weight: "",
@@ -160,6 +162,12 @@ const ProductFormModal = ({ isOpen, onClose, productId, onSuccess }) => {
               product.returnable !== undefined ? product.returnable : true,
             cancelable:
               product.cancelable !== undefined ? product.cancelable : true,
+            allowInfluencer:
+              product.allowInfluencer !== undefined ? product.allowInfluencer : true,
+            influencerCommission:
+              product.influencerCommission !== undefined && product.influencerCommission !== null
+                ? product.influencerCommission
+                : "",
             taxIncluded:
               product.taxIncluded !== undefined ? product.taxIncluded : false,
             taxRate:
@@ -224,6 +232,8 @@ const ProductFormModal = ({ isOpen, onClose, productId, onSuccess }) => {
         codAllowed: true,
         returnable: true,
         cancelable: true,
+        allowInfluencer: true,
+        influencerCommission: "",
         taxIncluded: false,
         taxRate: 18,
         description: "",
@@ -1685,6 +1695,41 @@ const ProductFormModal = ({ isOpen, onClose, productId, onSuccess }) => {
                           Cancelable
                         </span>
                       </label>
+                      <label className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          name="allowInfluencer"
+                          checked={formData.allowInfluencer !== false}
+                          onChange={handleChange}
+                          className="w-4 h-4 text-purple-600 rounded focus:ring-purple-500"
+                        />
+                        <span className="text-sm font-semibold text-purple-800">
+                          Allow Influencer Promotion & Links
+                        </span>
+                      </label>
+                      {formData.allowInfluencer !== false && (
+                        <div className="mt-2 p-3 bg-purple-50 rounded-xl border border-purple-200">
+                          <label className="block text-xs font-bold text-purple-900 mb-1">
+                            Custom Influencer Commission Rate (%)
+                          </label>
+                          <div className="relative max-w-xs">
+                            <input
+                              type="number"
+                              name="influencerCommission"
+                              step="0.5"
+                              min="0"
+                              max="100"
+                              placeholder="Leave blank for store default %"
+                              value={formData.influencerCommission ?? ""}
+                              onChange={handleChange}
+                              className="w-full px-3 py-1.5 rounded-lg border border-purple-200 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white"
+                            />
+                          </div>
+                          <p className="text-[10px] text-purple-600 mt-1">
+                            Optional: Set a custom rate for this specific product. If left blank, the vendor's default store commission rate will be used.
+                          </p>
+                        </div>
+                      )}
                       <label className="flex items-center gap-2">
                         <input
                           type="checkbox"

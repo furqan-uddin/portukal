@@ -46,7 +46,7 @@
     },
     {
         "title": "Affiliate Analytics",
-        "route": "/vendor/analytics",
+        "route": "/vendor/affiliate-analytics",
         "children": []
     },
 

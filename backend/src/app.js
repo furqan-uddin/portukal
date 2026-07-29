@@ -139,6 +139,8 @@ app.use('/api/influencer', influencerRoutes);          // Influencer: auth, prof
 app.use('/api/influencer', influencerMarketplaceRoutes);
 app.use('/api/influencer/affiliate-links', affiliateLinkRoutes);
 app.use('/api/influencer/commission-settings', commissionConfigRoutes);
+app.use('/api/admin/influencer-commission-settings', commissionConfigRoutes);
+app.use('/api/vendor/influencer-commission-settings', commissionConfigRoutes);
 app.use('/api/influencer/wallet', influencerWalletRoutes);
 app.use('/api/vendor/influencer-wallet', vendorWalletRoutes);
 app.use('/api/admin/withdrawals', adminWithdrawalRoutes);

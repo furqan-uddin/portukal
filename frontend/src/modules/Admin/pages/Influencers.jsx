@@ -176,6 +176,13 @@ const Influencers = () => {
         fetchInfluencers();
     }, [activeStatusTab, searchQuery, followersFilter, pagination.page]);
 
+    useEffect(() => {
+        if (searchParams.get('openSettings') === 'true') {
+            fetchCommSettings();
+            setIsCommSettingsModalOpen(true);
+        }
+    }, [searchParams]);
+
     const handleTabChange = (tab) => {
         if (tab === 'all') {
             searchParams.delete('status');

@@ -191,7 +191,7 @@ const VendorSidebar = ({ isOpen, onClose, isCollapsed }) => {
     const active = isActive(item.route);
 
     return (
-      <div key={item.route} className="mb-1">
+      <div key={item.title} className="mb-1">
         {/* Main Menu Item */}
         <div
           className={`

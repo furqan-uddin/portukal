@@ -78,6 +78,7 @@ const getChildRoute = (parentRoute, childName) => {
       "Manage Influencers": "/admin/influencers",
       "Pending Applications": "/admin/influencers?status=pending",
       "Withdrawal Requests": "/admin/influencers/withdrawals",
+      "Commission Bounds": "/admin/influencers?openSettings=true",
       "Affiliate Analytics": "/admin/influencer/analytics",
       "Fraud Risk Engine": "/admin/influencer/fraud",
     },

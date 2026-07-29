@@ -29,10 +29,10 @@ export const getGlobalCommissionSettings = () =>
     api.get('/influencer/commission-settings/global');
 
 export const updateGlobalCommissionSettings = (data) =>
-    api.put('/influencer/commission-settings/global', data);
+    api.put('/admin/influencer-commission-settings/global', data);
 
 export const getVendorInfluencerSettings = () =>
-    api.get('/influencer/commission-settings/vendor-settings');
+    api.get('/vendor/influencer-commission-settings/vendor-settings');
 
 export const updateVendorInfluencerSettings = (data) =>
-    api.put('/influencer/commission-settings/vendor-settings', data);
+    api.put('/vendor/influencer-commission-settings/vendor-settings', data);

@@ -128,24 +128,25 @@ export const updateVendorInfluencerSettings = asyncHandler(async (req, res) => {
         );
     }
 
-    const vendor = await Vendor.findById(vendorId);
-    if (!vendor) {
+    const updatedVendor = await Vendor.findByIdAndUpdate(
+        vendorId,
+        {
+            $set: {
+                'influencerProgram.enabled': enabled !== undefined ? Boolean(enabled) : true,
+                'influencerProgram.defaultCommissionPercent':
+                    defaultCommissionPercent !== undefined ? Number(defaultCommissionPercent) : 5,
+                'influencerProgram.allowProductOverride':
+                    allowProductOverride !== undefined ? Boolean(allowProductOverride) : true,
+            },
+        },
+        { new: true, runValidators: false }
+    );
+
+    if (!updatedVendor) {
         throw new ApiError(404, 'Vendor not found.');
     }
 
-    vendor.influencerProgram = {
-        enabled: enabled !== undefined ? Boolean(enabled) : true,
-        defaultCommissionPercent:
-            defaultCommissionPercent !== undefined
-                ? Number(defaultCommissionPercent)
-                : vendor.influencerProgram?.defaultCommissionPercent || 5,
-        allowProductOverride:
-            allowProductOverride !== undefined ? Boolean(allowProductOverride) : true,
-    };
-
-    await vendor.save();
-
     res.status(200).json(
-        new ApiResponse(200, vendor.influencerProgram, 'Vendor influencer settings updated successfully.')
+        new ApiResponse(200, updatedVendor.influencerProgram, 'Vendor influencer settings updated successfully.')
     );
 });
