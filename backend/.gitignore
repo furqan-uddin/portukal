@@ -6,6 +6,8 @@
 scratch/
 ./scripts
 ./scratch
+tests/
+uploads/reports/
 logs
 *.log
 npm-debug.log*

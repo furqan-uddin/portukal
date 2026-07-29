@@ -223,6 +223,7 @@ import FraudDashboard from "./modules/Admin/pages/FraudDashboard";
 import AuditDashboard from "./modules/Admin/pages/AuditDashboard";
 import SystemOperationsDashboard from "./modules/Admin/pages/SystemOperationsDashboard";
 import InfluencerAnalytics from "./modules/Influencer/pages/InfluencerAnalytics";
+import InfluencerSupport from "./modules/Influencer/pages/InfluencerSupport";
 
 // Inner component that has access to useLocation
 const AppRoutes = () => {
@@ -908,6 +909,7 @@ const AppRoutes = () => {
         <Route path="affiliate-links" element={<InfluencerAffiliateLinks />} />
         <Route path="wallet" element={<InfluencerWalletDashboard />} />
         <Route path="analytics" element={<InfluencerAnalytics />} />
+        <Route path="support" element={<InfluencerSupport />} />
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />
