@@ -32,8 +32,8 @@ const AUTH_SCOPES = {
     accessKey: 'influencer-token',
     refreshKey: 'influencer-refresh-token',
     persistKey: 'influencer-auth-storage',
-    loginPath: '/influence',
-    areaPrefix: '/influence',
+    loginPath: '/influencer',
+    areaPrefix: '/influencer',
   },
   user: {
     prefix: '/user',
@@ -46,6 +46,13 @@ const AUTH_SCOPES = {
 };
 
 const EXCLUDED_AUTH_SUFFIXES = [
+  '/login',
+  '/register',
+  '/verify-email-otp',
+  '/resend-email-otp',
+  '/verify-otp',
+  '/forgot-password',
+  '/reset-password',
   '/auth/login',
   '/auth/register',
   '/auth/verify-otp',
@@ -99,7 +106,7 @@ const getScopeFromPath = (path = window.location.pathname) => {
   if (path.startsWith('/admin')) return 'admin';
   if (path.startsWith('/vendor')) return 'vendor';
   if (path.startsWith('/delivery')) return 'delivery';
-  if (path.startsWith('/influence')) return 'influencer';
+  if (path.startsWith('/influencer') || path.startsWith('/influence')) return 'influencer';
   return 'user';
 };
 
@@ -215,6 +222,13 @@ api.interceptors.response.use(
 
     if (error.response?.status === 401) {
       const activeScope = pathScope;
+      const url = originalRequest.url || '';
+
+      // If the 401 error comes from an auth endpoint (e.g. wrong password during login), do NOT redirect
+      if (isExcludedAuthRequest(scope, url)) {
+        return Promise.reject(error);
+      }
+
       clearScopeAuth(scope);
       if (scope !== activeScope) {
         return Promise.reject(error);

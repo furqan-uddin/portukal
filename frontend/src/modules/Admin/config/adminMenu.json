@@ -58,7 +58,9 @@
     "children": [
       "Manage Influencers",
       "Pending Applications",
-      "Withdrawal Requests"
+      "Withdrawal Requests",
+      "Affiliate Analytics",
+      "Fraud Risk Engine"
     ]
   },
   {
@@ -146,7 +148,9 @@
     "children": [
       "General",
       "Payment & Shipping",
-      "Logistics & Delivery"
+      "Logistics & Delivery",
+      "Audit Trail Logs",
+      "System Operations"
     ]
   },
   {

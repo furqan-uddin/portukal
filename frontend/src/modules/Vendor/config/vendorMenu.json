@@ -34,6 +34,11 @@
         "route": "/vendor/influencer-wallet",
         "children": []
     },
+    {
+        "title": "Affiliate Analytics",
+        "route": "/vendor/analytics",
+        "children": []
+    },
 
     {
         "title":  "Orders",

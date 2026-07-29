@@ -21,7 +21,8 @@ export const login = asyncHandler(async (req, res) => {
     const isMatch = await admin.comparePassword(password);
     if (!isMatch) throw new ApiError(401, 'Invalid credentials.');
 
-    const { accessToken, refreshToken } = generateTokens({ id: admin._id, role: 'admin', email: admin.email });
+    const payloadRole = admin.role === 'superadmin' ? 'superadmin' : 'admin';
+    const { accessToken, refreshToken } = generateTokens({ id: admin._id, role: payloadRole, email: admin.email });
     await persistRefreshSession(admin, refreshToken);
     res.status(200).json(new ApiResponse(200, { accessToken, refreshToken, admin: { id: admin._id, name: admin.name, email: admin.email, role: admin.role } }, 'Admin login successful.'));
 });

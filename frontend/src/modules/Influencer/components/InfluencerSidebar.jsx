@@ -26,9 +26,9 @@ const InfluencerSidebar = () => {
         { title: 'Marketplace', route: '/influencer/marketplace', icon: FiShoppingBag, requiresApproval: true },
         { title: 'My Affiliate Links', route: '/influencer/affiliate-links', icon: FiLink, requiresApproval: true },
         { title: 'Wallet & Withdrawals', route: '/influencer/wallet', icon: FiDollarSign, requiresApproval: true },
+        { title: 'Analytics BI', route: '/influencer/analytics', icon: FiBarChart2, requiresApproval: true },
         { title: 'Profile', route: '/influencer/profile', icon: FiUser, requiresApproval: false },
         { title: 'Support', route: '/influencer/support', icon: FiHelpCircle, requiresApproval: false },
-        { title: 'Analytics', route: '#', icon: FiBarChart2, isComingSoon: true },
     ];
 
     const handleNavigation = (item) => {

@@ -29,6 +29,7 @@ import {
     FiYoutube,
     FiFacebook,
     FiLinkedin,
+    FiPercent,
 } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 import {

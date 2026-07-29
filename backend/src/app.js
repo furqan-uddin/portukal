@@ -21,7 +21,14 @@ import commissionConfigRoutes from './modules/influencer/routes/commissionConfig
 import influencerWalletRoutes from './modules/influencer/routes/influencerWallet.routes.js';
 import vendorWalletRoutes from './modules/vendor/routes/vendorWallet.routes.js';
 import adminWithdrawalRoutes from './modules/admin/routes/adminWithdrawal.routes.js';
+import analyticsRoutes from './modules/influencer/routes/analytics.routes.js';
+import notificationsRoutes from './modules/influencer/routes/notifications.routes.js';
+import reportsRoutes from './modules/influencer/routes/reports.routes.js';
+import fraudRoutes from './modules/influencer/routes/fraud.routes.js';
+import auditRoutes from './modules/influencer/routes/audit.routes.js';
+import systemHealthRoutes from './modules/influencer/routes/systemHealth.routes.js';
 import { startSettlementWorker } from './modules/influencer/services/SettlementWorker.js';
+import { ReportService } from './modules/influencer/services/ReportService.js';
 import webhookRouter from './modules/user/routes/webhook.routes.js';
 import paymentRouter from './modules/user/routes/payment.routes.js';
 
@@ -132,9 +139,20 @@ app.use('/api/influencer/wallet', influencerWalletRoutes);
 app.use('/api/vendor/influencer-wallet', vendorWalletRoutes);
 app.use('/api/admin/withdrawals', adminWithdrawalRoutes);
 app.use('/api/referrals', referralRoutes);
+app.use('/api/analytics', analyticsRoutes);
+app.use('/api/notifications', notificationsRoutes);
+app.use('/api/reports', reportsRoutes);
+app.use('/api/admin/influencer/fraud', fraudRoutes);
+app.use('/api/admin/audit', auditRoutes);
+app.use('/api/admin/system', systemHealthRoutes);
 
 // Start Background Settlement Worker (Runs every 1 hour)
 startSettlementWorker(60 * 60 * 1000);
+
+// Daily Report Expiry Cleanup Worker (Runs every 24 hours)
+setInterval(() => {
+    ReportService.cleanExpiredReportsWorker().catch((err) => console.error('[ReportCleanup] Error:', err));
+}, 24 * 60 * 60 * 1000);
 
 // ─── Error Handling ──────────────────────────────────────────────────────────
 app.use(notFound);

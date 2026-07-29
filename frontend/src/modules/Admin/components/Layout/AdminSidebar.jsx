@@ -78,6 +78,8 @@ const getChildRoute = (parentRoute, childName) => {
       "Manage Influencers": "/admin/influencers",
       "Pending Applications": "/admin/influencers?status=pending",
       "Withdrawal Requests": "/admin/influencers/withdrawals",
+      "Affiliate Analytics": "/admin/influencer/analytics",
+      "Fraud Risk Engine": "/admin/influencer/fraud",
     },
     "/admin/delivery": {
       "Delivery Boys": "/admin/delivery/delivery-boys",
@@ -120,6 +122,8 @@ const getChildRoute = (parentRoute, childName) => {
       General: "/admin/settings/general",
       "Payment & Shipping": "/admin/settings/payment-shipping",
       "Logistics & Delivery": "/admin/settings/logistics",
+      "Audit Trail Logs": "/admin/audit",
+      "System Operations": "/admin/system/operations",
     },
     "/admin/policies": {
       "Privacy Policy": "/admin/policies/privacy-policy",

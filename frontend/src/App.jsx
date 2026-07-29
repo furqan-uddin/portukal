@@ -216,7 +216,13 @@ import InfluencerAffiliateLinks from "./modules/Influencer/pages/AffiliateLinks"
 import InfluencerWalletDashboard from "./modules/Influencer/pages/WalletDashboard";
 import VendorInfluencerSettings from "./modules/Vendor/pages/VendorInfluencerSettings";
 import VendorInfluencerWallet from "./modules/Vendor/pages/VendorInfluencerWallet";
+import VendorInfluencerAnalytics from "./modules/Vendor/pages/VendorAnalytics";
 import AdminWithdrawals from "./modules/Admin/pages/AdminWithdrawals";
+import AdminAnalytics from "./modules/Admin/pages/AdminAnalytics";
+import FraudDashboard from "./modules/Admin/pages/FraudDashboard";
+import AuditDashboard from "./modules/Admin/pages/AuditDashboard";
+import SystemOperationsDashboard from "./modules/Admin/pages/SystemOperationsDashboard";
+import InfluencerAnalytics from "./modules/Influencer/pages/InfluencerAnalytics";
 
 // Inner component that has access to useLocation
 const AppRoutes = () => {
@@ -686,6 +692,10 @@ const AppRoutes = () => {
         <Route path="customers/:id" element={<CustomerDetailPage />} />
         <Route path="influencers" element={<AdminInfluencers />} />
         <Route path="influencers/withdrawals" element={<AdminWithdrawals />} />
+        <Route path="influencer/analytics" element={<AdminAnalytics />} />
+        <Route path="influencer/fraud" element={<FraudDashboard />} />
+        <Route path="audit" element={<AuditDashboard />} />
+        <Route path="system/operations" element={<SystemOperationsDashboard />} />
         
         {/* Social Control Routes */}
         <Route path="reels" element={<ReelModeration />} />
@@ -877,6 +887,7 @@ const AppRoutes = () => {
         <Route path="marketing/influencer-program" element={<VendorInfluencerSettings />} />
         <Route path="influencer-settings" element={<VendorInfluencerSettings />} />
         <Route path="influencer-wallet" element={<VendorInfluencerWallet />} />
+        <Route path="analytics" element={<VendorInfluencerAnalytics />} />
       </Route>
 
       {/* Influencer Routes */}
@@ -896,6 +907,7 @@ const AppRoutes = () => {
         <Route path="product/:slug" element={<InfluencerMarketplaceProductDetail />} />
         <Route path="affiliate-links" element={<InfluencerAffiliateLinks />} />
         <Route path="wallet" element={<InfluencerWalletDashboard />} />
+        <Route path="analytics" element={<InfluencerAnalytics />} />
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />
