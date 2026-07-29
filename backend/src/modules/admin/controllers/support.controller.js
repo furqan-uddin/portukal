@@ -34,12 +34,14 @@ export const getAllTickets = asyncHandler(async (req, res) => {
     }
 
     if (source && source !== 'all') {
-        if (source === 'customer') {
+        if (source === 'customer' || source === 'user') {
             filter.userId = { $exists: true, $ne: null };
         } else if (source === 'vendor') {
             filter.vendorId = { $exists: true, $ne: null };
         } else if (source === 'delivery') {
             filter.deliveryBoyId = { $exists: true, $ne: null };
+        } else if (source === 'influencer') {
+            filter.influencerId = { $exists: true, $ne: null };
         }
     }
 
@@ -88,6 +90,16 @@ export const getAllTickets = asyncHandler(async (req, res) => {
         }).select('_id');
         const deliveryBoyIds = matchingDeliveries.map(d => d._id);
 
+        // Find matching Influencer IDs
+        const matchingInfluencers = await mongoose.model('Influencer').find({
+            $or: [
+                { name: searchRegex },
+                { email: searchRegex },
+                { referralCode: searchRegex }
+            ]
+        }).select('_id');
+        const influencerIds = matchingInfluencers.map(i => i._id);
+
         // Find matching TicketType (category) IDs by name or icon
         const matchingTypes = await TicketType.find({
             $or: [
@@ -102,6 +114,7 @@ export const getAllTickets = asyncHandler(async (req, res) => {
             { userId: { $in: userIds } },
             { vendorId: { $in: vendorIds } },
             { deliveryBoyId: { $in: deliveryBoyIds } },
+            { influencerId: { $in: influencerIds } },
             { ticketTypeId: { $in: ticketTypeIds } },
             ...(search.match(/^[0-9a-fA-F]{24}$/) ? [{ _id: search }] : [])
         ];
@@ -111,6 +124,7 @@ export const getAllTickets = asyncHandler(async (req, res) => {
         .populate('userId', 'name email phone')
         .populate('vendorId', 'storeName email')
         .populate('deliveryBoyId', 'name email phone')
+        .populate('influencerId', 'name email phone referralCode slug')
         .populate('ticketTypeId', 'name icon')
         .sort({ updatedAt: -1 })
         .skip((pageNumber - 1) * limitNumber)
@@ -134,7 +148,7 @@ export const getAllTickets = asyncHandler(async (req, res) => {
 
     // Normalize for frontend
     const normalizedTickets = tickets.map(ticket => {
-        const portal = ticket.userId ? 'customer' : (ticket.vendorId ? 'vendor' : 'delivery');
+        const portal = ticket.userId ? 'customer' : (ticket.vendorId ? 'vendor' : (ticket.deliveryBoyId ? 'delivery' : 'influencer'));
         const catId = ticket.ticketTypeId?._id?.toString() || ticket.ticketTypeId?.toString();
         const catInfo = catId ? categoryMap[catId] : null;
         const fallback = portalDefaultMap[portal] || { name: 'Other', icon: '❓' };
@@ -153,8 +167,12 @@ export const getAllTickets = asyncHandler(async (req, res) => {
                 name: ticket.deliveryBoyId.name,
                 email: ticket.deliveryBoyId.email,
                 phone: ticket.deliveryBoyId.phone
-            } : { name: 'Anonymous' })),
-            raisedBy: ticket.userId ? 'customer' : (ticket.vendorId ? 'vendor' : (ticket.deliveryBoyId ? 'delivery' : 'unknown')),
+            } : (ticket.influencerId ? {
+                name: ticket.influencerId.name,
+                email: ticket.influencerId.email,
+                phone: ticket.influencerId.phone
+            } : { name: 'Anonymous' }))),
+            raisedBy: ticket.userId ? 'customer' : (ticket.vendorId ? 'vendor' : (ticket.deliveryBoyId ? 'delivery' : (ticket.influencerId ? 'influencer' : 'unknown'))),
             category: catInfo ? `${catInfo.icon} ${catInfo.name}` : `${fallback.icon} ${fallback.name}`,
             lastUpdate: ticket.updatedAt
         };
@@ -183,6 +201,7 @@ export const getTicketById = asyncHandler(async (req, res) => {
         .populate('userId', 'name email phone')
         .populate('vendorId', 'storeName email')
         .populate('deliveryBoyId', 'name email phone')
+        .populate('influencerId', 'name email phone referralCode slug')
         .populate('ticketTypeId', 'name icon');
 
     if (!ticket) {
@@ -190,7 +209,7 @@ export const getTicketById = asyncHandler(async (req, res) => {
     }
 
     // Fallback category resolution
-    const portal = ticket.userId ? 'customer' : (ticket.vendorId ? 'vendor' : 'delivery');
+    const portal = ticket.userId ? 'customer' : (ticket.vendorId ? 'vendor' : (ticket.deliveryBoyId ? 'delivery' : 'influencer'));
     let fallback = await TicketType.findOne({ isSystem: true, portals: portal, name: { $regex: /Other/i }, isArchived: false });
     if (!fallback) {
         fallback = { name: 'Other', icon: '❓' };
@@ -214,8 +233,12 @@ export const getTicketById = asyncHandler(async (req, res) => {
             name: ticket.deliveryBoyId.name,
             email: ticket.deliveryBoyId.email,
             phone: ticket.deliveryBoyId.phone
-        } : { name: 'Anonymous' })),
-        raisedBy: ticket.userId ? 'customer' : (ticket.vendorId ? 'vendor' : (ticket.deliveryBoyId ? 'delivery' : 'unknown')),
+        } : (ticket.influencerId ? {
+            name: `${ticket.influencerId.name} (Influencer)`,
+            email: ticket.influencerId.email,
+            phone: ticket.influencerId.phone
+        } : { name: 'Anonymous' }))),
+        raisedBy: ticket.userId ? 'customer' : (ticket.vendorId ? 'vendor' : (ticket.deliveryBoyId ? 'delivery' : (ticket.influencerId ? 'influencer' : 'unknown'))),
         category: `${catIcon} ${catName}`
     };
 
@@ -298,8 +321,8 @@ export const addTicketMessage = asyncHandler(async (req, res) => {
     await ticket.save();
 
     // Notify via socket
-    const roomPrefix = ticket.vendorId ? 'vendor_' : (ticket.userId ? 'user_' : 'delivery_');
-    const recipientId = ticket.vendorId || ticket.userId || ticket.deliveryBoyId;
+    const roomPrefix = ticket.vendorId ? 'vendor_' : (ticket.userId ? 'user_' : (ticket.deliveryBoyId ? 'delivery_' : (ticket.influencerId ? 'influencer_' : 'user_')));
+    const recipientId = ticket.vendorId || ticket.userId || ticket.deliveryBoyId || ticket.influencerId;
     emitToRoom(`${roomPrefix}${recipientId}`, 'new_notification', {
         type: 'new_support_message',
         ticketId: ticket._id

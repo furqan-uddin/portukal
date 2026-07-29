@@ -84,6 +84,7 @@ import RevenueOverview from "./modules/Admin/pages/finance/RevenueOverview";
 import ProfitLoss from "./modules/Admin/pages/finance/ProfitLoss";
 import EscrowDashboard from "./modules/Admin/pages/finance/EscrowDashboard";
 import AdminInfluencers from "./modules/Admin/pages/Influencers";
+import AdminInfluencerSupport from "./modules/Admin/pages/support/AdminInfluencerSupport";
 import OrderTrends from "./modules/Admin/pages/finance/OrderTrends";
 import PaymentBreakdown from "./modules/Admin/pages/finance/PaymentBreakdown";
 import TaxReports from "./modules/Admin/pages/finance/TaxReports";
@@ -138,6 +139,7 @@ import PolicyPage from "./modules/UserApp/pages/PolicyPage";
 import SimilarExplore from "./modules/UserApp/pages/SimilarExplore";
 import UserSupport from "./modules/UserApp/pages/Support";
 import ComingSoon from "./modules/UserApp/pages/ComingSoon";
+import VendorCreatorCollaborations from "./modules/Vendor/pages/VendorCreatorCollaborations";
 import ReelsPage from "./modules/Reels/pages/ReelsPage";
 import CreatorProfile from "./modules/Reels/pages/CreatorProfile";
 import CreatorChat from "./modules/Reels/pages/CreatorChat";
@@ -750,6 +752,7 @@ const AppRoutes = () => {
         <Route path="support/live-chat" element={<LiveChat />} />
         <Route path="support/ticket-types" element={<TicketTypes />} />
         <Route path="support/tickets" element={<Tickets />} />
+        <Route path="influencer-support" element={<AdminInfluencerSupport />} />
         <Route path="reports" element={<SalesReport />} />
         <Route path="reports/sales-report" element={<SalesReport />} />
         <Route path="reports/inventory-report" element={<InventoryReport />} />
@@ -908,6 +911,7 @@ const AppRoutes = () => {
         <Route path="reels/drafts" element={<VendorReelsList />} />
         <Route path="reels/:id/analytics" element={<VendorReelAnalytics />} />
         <Route path="influencers/invite" element={<VendorInfluencerInvite />} />
+        <Route path="creator-collaborations" element={<VendorCreatorCollaborations />} />
       </Route>
 
       {/* Influencer Routes */}

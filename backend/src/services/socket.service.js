@@ -9,7 +9,7 @@ const ALLOWED_ORIGINS = process.env.FRONTEND_URL
     : ['http://localhost:5173'];
 
 // Rooms that require authentication to join
-const PROTECTED_ROOM_PREFIXES = ['user_', 'vendor_', 'delivery_', 'order_', 'chat_', 'admin_'];
+const PROTECTED_ROOM_PREFIXES = ['user_', 'vendor_', 'delivery_', 'influencer_', 'collab_', 'order_', 'chat_', 'admin_'];
 
 const isProtectedRoom = (room) =>
     PROTECTED_ROOM_PREFIXES.some((prefix) => String(room || '').startsWith(prefix));
@@ -55,13 +55,13 @@ export const initSocket = (server) => {
                 return;
             }
 
-            // Enforce private room access: role_ID (e.g., user_123)
-            const privatePrefixes = ['user_', 'vendor_', 'delivery_'];
+            // Enforce private room access: role_ID (e.g., user_123, influencer_123)
+            const privatePrefixes = ['user_', 'vendor_', 'delivery_', 'influencer_'];
             const matchedPrefix = privatePrefixes.find(p => roomStr.startsWith(p));
             
             if (matchedPrefix && socket.user) {
                 const requestedId = roomStr.replace(matchedPrefix, '');
-                const currentId = String(socket.user.id || '');
+                const currentId = String(socket.user.id || socket.user._id || socket.user.influencerId || '');
                 const isAdmin = socket.user.role === 'admin' || socket.user.role === 'superadmin';
                 
                 if (!isAdmin && requestedId !== currentId) {

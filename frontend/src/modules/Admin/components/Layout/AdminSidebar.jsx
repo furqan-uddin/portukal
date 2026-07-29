@@ -81,6 +81,7 @@ const getChildRoute = (parentRoute, childName) => {
       "Commission Bounds": "/admin/influencers?openSettings=true",
       "Affiliate Analytics": "/admin/influencer/analytics",
       "Fraud Risk Engine": "/admin/influencer/fraud",
+      "Influencer Support": "/admin/influencer-support",
     },
     "/admin/delivery": {
       "Delivery Boys": "/admin/delivery/delivery-boys",

@@ -35,6 +35,8 @@ import vendorReelRoutes from './modules/reels/routes/vendor.reel.routes.js';
 import adminReelRoutes from './modules/reels/routes/admin.reel.routes.js';
 import influencerReelRoutes from './modules/reels/routes/influencer.reel.routes.js';
 import userReelRoutes from './modules/reels/routes/user.reel.routes.js';
+import influencerSupportRoutes from './modules/influencer/routes/influencerSupport.routes.js';
+import adminInfluencerSupportRoutes from './modules/Admin/routes/adminInfluencerSupport.routes.js';
 
 // Middleware imports
 import { apiLimiter } from './middlewares/rateLimiter.js';
@@ -157,6 +159,8 @@ app.use('/api/vendor/reels', vendorReelRoutes);        // Vendor: upload, manage
 app.use('/api/admin/reels', adminReelRoutes);           // Admin: moderate, feature, analytics
 app.use('/api/influencer/reels', influencerReelRoutes); // Influencer: browse, affiliate link
 app.use('/api/reels', userReelRoutes);                  // User: feed, interactions, comments
+app.use('/api/influencer', influencerSupportRoutes);        // Influencer: admin support tickets & vendor collaborations
+app.use('/api/admin/influencer-support', adminInfluencerSupportRoutes); // Admin: influencer support live chat
 
 // Start Background Settlement Worker (Runs every 1 hour)
 startSettlementWorker(60 * 60 * 1000);

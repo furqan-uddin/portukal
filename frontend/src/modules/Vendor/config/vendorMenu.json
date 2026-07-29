@@ -40,6 +40,11 @@
         ]
     },
     {
+        "title": "Creator Collaborations",
+        "route": "/vendor/creator-collaborations",
+        "children": []
+    },
+    {
         "title": "Commission Escrow",
         "route": "/vendor/influencer-wallet",
         "children": []

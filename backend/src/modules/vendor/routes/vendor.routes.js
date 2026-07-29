@@ -17,6 +17,7 @@ import * as brandController from '../controllers/brand.controller.js';
 import * as categoryController from '../controllers/category.controller.js';
 import * as storefrontController from '../controllers/storefront.controller.js';
 import * as collabController from '../controllers/vendor.collaboration.controller.js';
+import * as vendorCollabChatController from '../controllers/vendorCollaborationChat.controller.js';
 import { authenticate } from '../../../middlewares/authenticate.js';
 import { authorize, enforceAccountStatus } from '../../../middlewares/authorize.js';
 import { authLimiter, otpLimiter, otpVerifyLimiter } from '../../../middlewares/rateLimiter.js';
@@ -179,5 +180,12 @@ router.get('/influencers/list', ...vendorAuth, collabController.listVerifiedInfl
 router.post('/influencers/invite', ...vendorAuth, collabController.sendPromotionInvitation);
 router.get('/influencers/invitations', ...vendorAuth, collabController.listVendorInvitations);
 router.patch('/influencers/requests/:id/respond', ...vendorAuth, collabController.respondToInfluencerRequest);
+
+// Creator Collaborations Chat & Deal Manager
+router.get('/creator-collaborations', ...vendorAuth, vendorCollabChatController.getVendorCollaborations);
+router.get('/creator-collaborations/:id', ...vendorAuth, vendorCollabChatController.getCollaborationDetail);
+router.post('/creator-collaborations/:id/message', ...vendorAuth, vendorCollabChatController.sendCollaborationMessage);
+router.patch('/creator-collaborations/:id/status', ...vendorAuth, vendorCollabChatController.updateCollaborationStatus);
+router.patch('/creator-collaborations/:id/sample', ...vendorAuth, vendorCollabChatController.updateSampleShipping);
 
 export default router;
