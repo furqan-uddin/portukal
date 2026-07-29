@@ -1,56 +1,47 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import {
-    loginInfluencer,
     registerInfluencer,
-    verifyEmailOtpInfluencer,
-    resendEmailOtpInfluencer,
-    logoutInfluencer,
-    forgotPasswordInfluencer,
-    verifyOtpInfluencer,
-    resetPasswordInfluencer,
     getInfluencerProfile,
     updateInfluencerProfile,
 } from '../services/influencerAuthService';
+import { useAuthStore } from '../../../shared/store/authStore';
 
 export const useInfluencerAuthStore = create(
     persist(
         (set, get) => ({
             influencer: null,
-            token: null,
-            refreshToken: null,
-            isAuthenticated: false,
             isLoading: false,
             error: null,
 
+            // Login proxy to the global AuthStore
             login: async (email, password, rememberMe = false) => {
                 set({ isLoading: true, error: null });
                 try {
-                    const res = await loginInfluencer(email, password, rememberMe);
-                    const { influencer, accessToken, refreshToken } = res || {};
+                    // 1. Log in as a standard User
+                    const { login } = useAuthStore.getState();
+                    await login(email, password, rememberMe);
 
-                    if (!accessToken || !influencer) {
-                        throw new Error('Invalid login response from server.');
-                    }
-
-                    localStorage.setItem('influencer-token', accessToken);
-                    if (refreshToken) {
-                        localStorage.setItem('influencer-refresh-token', refreshToken);
-                    }
-
+                    // 2. Fetch Influencer Profile
+                    const profile = await getInfluencerProfile();
                     set({
-                        influencer,
-                        token: accessToken,
-                        refreshToken: refreshToken || null,
-                        isAuthenticated: true,
+                        influencer: profile,
                         isLoading: false,
                         error: null,
                     });
 
-                    return { success: true, influencer };
+                    return { success: true, influencer: profile };
                 } catch (err) {
                     const message = err?.response?.data?.message || err?.message || 'Login failed';
                     set({ isLoading: false, error: message });
+                    
+                    // If they logged in successfully but don't have an influencer profile, we should logout from User?
+                    // Actually, if it's a 403 because they aren't an influencer, the error will be caught here.
+                    if (err?.response?.status === 403) {
+                         const { logout } = useAuthStore.getState();
+                         logout();
+                    }
+                    
                     throw err;
                 }
             },
@@ -68,70 +59,10 @@ export const useInfluencerAuthStore = create(
                 }
             },
 
-            verifyEmailOtp: async (email, otp) => {
-                set({ isLoading: true, error: null });
-                try {
-                    const res = await verifyEmailOtpInfluencer(email, otp);
-                    set({ isLoading: false });
-                    return res;
-                } catch (err) {
-                    const message = err?.response?.data?.message || err?.message || 'Email verification failed';
-                    set({ isLoading: false, error: message });
-                    throw err;
-                }
-            },
-
-            resendEmailOtp: async (email) => {
-                set({ isLoading: true, error: null });
-                try {
-                    const res = await resendEmailOtpInfluencer(email);
-                    set({ isLoading: false });
-                    return res;
-                } catch (err) {
-                    const message = err?.response?.data?.message || err?.message;
-                    set({ isLoading: false, error: message });
-                    throw err;
-                }
-            },
-
-            forgotPassword: async (email) => {
-                set({ isLoading: true, error: null });
-                try {
-                    const res = await forgotPasswordInfluencer(email);
-                    set({ isLoading: false });
-                    return res;
-                } catch (err) {
-                    set({ isLoading: false, error: err?.response?.data?.message || err?.message });
-                    throw err;
-                }
-            },
-
-            verifyOtp: async (email, otp) => {
-                set({ isLoading: true, error: null });
-                try {
-                    const res = await verifyOtpInfluencer(email, otp);
-                    set({ isLoading: false });
-                    return res;
-                } catch (err) {
-                    set({ isLoading: false, error: err?.response?.data?.message || err?.message });
-                    throw err;
-                }
-            },
-
-            resetPassword: async (email, otp, password, confirmPassword) => {
-                set({ isLoading: true, error: null });
-                try {
-                    const res = await resetPasswordInfluencer(email, otp, password, confirmPassword);
-                    set({ isLoading: false });
-                    return res;
-                } catch (err) {
-                    set({ isLoading: false, error: err?.response?.data?.message || err?.message });
-                    throw err;
-                }
-            },
-
             fetchProfile: async () => {
-                if (!localStorage.getItem('influencer-token')) return;
+                const token = localStorage.getItem('token');
+                if (!token) return;
+                
                 set({ isLoading: true });
                 try {
                     const profile = await getInfluencerProfile();
@@ -155,22 +86,46 @@ export const useInfluencerAuthStore = create(
             },
 
             logout: () => {
-                logoutInfluencer().catch(() => {});
-                localStorage.removeItem('influencer-token');
-                localStorage.removeItem('influencer-refresh-token');
+                const { logout } = useAuthStore.getState();
+                logout(); // Logout standard user
+
                 set({
                     influencer: null,
-                    token: null,
-                    refreshToken: null,
-                    isAuthenticated: false,
                     isLoading: false,
                     error: null,
                 });
             },
         }),
         {
-            name: 'influencer-auth-storage',
+            name: 'influencer-profile-storage',
             storage: createJSONStorage(() => localStorage),
         }
     )
 );
+
+// We expose a custom hook to combine User Auth State with Influencer Profile State
+export const useUnifiedInfluencerAuth = () => {
+    const { isAuthenticated: isUserAuth, user, token } = useAuthStore();
+    const { influencer, isLoading, error, login, register, logout, fetchProfile, updateProfile } = useInfluencerAuthStore();
+
+    const isAuthenticated = isUserAuth && Boolean(influencer);
+
+    return {
+        isAuthenticated,
+        user,
+        influencer,
+        token: token || localStorage.getItem('token'),
+        isLoading,
+        error,
+        status: influencer?.status || 'pending',
+        isPending: influencer?.status === 'pending',
+        isApproved: influencer?.status === 'approved',
+        isRejected: influencer?.status === 'rejected',
+        isSuspended: influencer?.status === 'suspended',
+        login,
+        register,
+        logout,
+        fetchProfile,
+        updateProfile,
+    };
+};

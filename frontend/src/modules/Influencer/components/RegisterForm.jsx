@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
     User,
     Mail,
@@ -22,9 +22,11 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useInfluencerAuth } from '../hooks/useInfluencerAuth';
+import { useAuthStore } from '../../../shared/store/authStore';
 
 const RegisterForm = ({ onSwitchToLogin, onRequireEmailVerification }) => {
     const { register, isLoading } = useInfluencerAuth();
+    const { isAuthenticated: isUserLoggedIn, user: loggedInUser } = useAuthStore();
 
     const [currentStep, setCurrentStep] = useState(1);
     const [showPassword, setShowPassword] = useState(false);
@@ -34,12 +36,12 @@ const RegisterForm = ({ onSwitchToLogin, onRequireEmailVerification }) => {
     // Form fields state
     const [formData, setFormData] = useState({
         // Step 1
-        name: '',
-        email: '',
-        mobile: '',
+        name: loggedInUser?.name || '',
+        email: loggedInUser?.email || '',
+        mobile: loggedInUser?.phone || '',
         password: '',
         confirmPassword: '',
-        profileImage: '',
+        profileImage: loggedInUser?.avatar || '',
         bio: '',
         followers: '',
         // Step 2
@@ -49,7 +51,7 @@ const RegisterForm = ({ onSwitchToLogin, onRequireEmailVerification }) => {
         linkedin: '',
         website: '',
         // Step 3
-        accountHolderName: '',
+        accountHolderName: loggedInUser?.name || '',
         bankName: '',
         accountNumber: '',
         ifscCode: '',
@@ -58,6 +60,18 @@ const RegisterForm = ({ onSwitchToLogin, onRequireEmailVerification }) => {
         aadhaarNumber: '',
         agreeTerms: false,
     });
+
+    useEffect(() => {
+        if (isUserLoggedIn && loggedInUser) {
+            setFormData((prev) => ({
+                ...prev,
+                name: prev.name || loggedInUser.name || '',
+                email: prev.email || loggedInUser.email || '',
+                mobile: prev.mobile || loggedInUser.phone || '',
+                accountHolderName: prev.accountHolderName || loggedInUser.name || '',
+            }));
+        }
+    }, [isUserLoggedIn, loggedInUser]);
 
     const validateSingleField = (name, val, updatedFormData = formData) => {
         let error = '';
@@ -83,13 +97,13 @@ const RegisterForm = ({ onSwitchToLogin, onRequireEmailVerification }) => {
                 error = 'Mobile number must be 10 digits starting with 6-9.';
             }
         } else if (name === 'password') {
-            if (!val) {
+            if (!isUserLoggedIn && !val) {
                 error = 'Password is required.';
-            } else if (val.length < 8) {
+            } else if (val && val.length < 8) {
                 error = 'Password must be at least 8 characters long.';
             }
         } else if (name === 'confirmPassword') {
-            if (!val) {
+            if (!isUserLoggedIn && !val) {
                 error = 'Confirm password is required.';
             } else if (val !== updatedFormData.password) {
                 error = 'Passwords do not match.';
@@ -243,8 +257,8 @@ const RegisterForm = ({ onSwitchToLogin, onRequireEmailVerification }) => {
 
         try {
             await register(payload);
-            toast.success('Registration submitted! Please verify your 6-digit email OTP code.');
-            onRequireEmailVerification(formData.email.trim().toLowerCase());
+            toast.success('Registration successful! You can now log in.');
+            onSwitchToLogin(formData.email.trim().toLowerCase());
         } catch (error) {
             const msg = error?.response?.data?.message || error?.message || 'Registration failed. Please check details.';
             setErrorMsg(msg);
@@ -262,6 +276,13 @@ const RegisterForm = ({ onSwitchToLogin, onRequireEmailVerification }) => {
                     {currentStep === 2 && 'Social Accounts'}
                     {currentStep === 3 && 'Verification & Payout Details'}
                 </p>
+
+                {isUserLoggedIn && (
+                    <div className="mb-4 p-3 bg-purple-50 border border-purple-200 rounded-xl flex items-center justify-between text-xs text-purple-800">
+                        <span>Applying as logged-in user: <strong>{loggedInUser?.name}</strong> ({loggedInUser?.email})</span>
+                        <span className="bg-purple-200 px-2 py-0.5 rounded text-[10px] font-semibold text-purple-900">Auto-Linked</span>
+                    </div>
+                )}
 
                 <div className="influencer-wizard-steps">
                     <div className={`influencer-wizard-step ${currentStep === 1 ? 'active' : currentStep > 1 ? 'completed' : ''}`}>

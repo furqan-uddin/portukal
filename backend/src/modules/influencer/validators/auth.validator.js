@@ -18,11 +18,10 @@ export const registerSchema = Joi.object({
         'string.pattern.base': 'Please enter a valid 10-digit mobile number.',
         'any.required': 'Mobile number is required.',
     }),
-    password: Joi.string().min(8).required().messages({
+    password: Joi.string().min(8).allow('').optional().messages({
         'string.min': 'Password must be at least 8 characters long.',
-        'any.required': 'Password is required.',
     }),
-    confirmPassword: Joi.string().valid(Joi.ref('password')).optional().messages({
+    confirmPassword: Joi.string().valid(Joi.ref('password')).allow('').optional().messages({
         'any.only': 'Confirm password must match password.',
     }),
     profileImage: Joi.string().allow('').optional(),

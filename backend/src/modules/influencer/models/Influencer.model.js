@@ -1,8 +1,13 @@
 import mongoose from 'mongoose';
-import bcrypt from 'bcryptjs';
 
 const influencerSchema = new mongoose.Schema(
     {
+        user: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'User',
+            required: [true, 'User reference is required'],
+            unique: true,
+        },
         name: {
             type: String,
             required: [true, 'Full name is required'],
@@ -27,28 +32,14 @@ const influencerSchema = new mongoose.Schema(
         email: {
             type: String,
             required: [true, 'Email is required'],
-            unique: true,
             lowercase: true,
             trim: true,
             index: true,
         },
-        isEmailVerified: {
-            type: Boolean,
-            default: false,
-        },
-        emailOtp: { type: String, select: false },
-        emailOtpExpiry: { type: Date, select: false },
         mobile: {
             type: String,
-            required: [true, 'Mobile number is required'],
-            unique: true,
             trim: true,
             index: true,
-        },
-        password: {
-            type: String,
-            required: [true, 'Password is required'],
-            select: false,
         },
         profileImage: {
             type: String,
@@ -132,32 +123,10 @@ const influencerSchema = new mongoose.Schema(
             type: mongoose.Schema.Types.ObjectId,
             ref: 'Admin',
         },
-        suspendedAt: { type: Date },
-        lastLogin: { type: Date },
-        failedLoginAttempts: { type: Number, default: 0, select: false },
-        lockUntil: { type: Date, select: false },
-        otp: { type: String, select: false },
-        otpExpiry: { type: Date, select: false },
-        resetOtp: { type: String, select: false },
-        resetOtpExpiry: { type: Date, select: false },
-        resetOtpVerified: { type: Boolean, default: false, select: false },
-        refreshTokenHash: { type: String, select: false },
-        refreshTokenExpiresAt: { type: Date, select: false },
+        suspendedAt: { type: Date }
     },
     { timestamps: true }
 );
-
-// Hash password before saving
-influencerSchema.pre('save', async function (next) {
-    if (!this.isModified('password')) return next();
-    this.password = await bcrypt.hash(this.password, 12);
-    next();
-});
-
-// Compare password method
-influencerSchema.methods.comparePassword = async function (candidatePassword) {
-    return bcrypt.compare(candidatePassword, this.password);
-};
 
 const Influencer = mongoose.models.Influencer || mongoose.model('Influencer', influencerSchema);
 export { Influencer };

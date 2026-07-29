@@ -4,28 +4,17 @@ import { influencerAuthenticate } from '../middleware/influencerAuth.js';
 import { validate } from '../../../middlewares/validate.js';
 import {
     registerSchema,
-    loginSchema,
-    verifyEmailOtpSchema,
-    resendEmailOtpSchema,
-    forgotPasswordSchema,
-    verifyOtpSchema,
-    resetPasswordSchema,
     updateProfileSchema,
 } from '../validators/auth.validator.js';
 
+import { optionalAuth } from '../../../middlewares/authenticate.js';
+
 const router = express.Router();
 
-// Public routes
-router.post('/register', validate(registerSchema), authController.register);
-router.post('/verify-email-otp', validate(verifyEmailOtpSchema), authController.verifyEmailOtp);
-router.post('/resend-email-otp', validate(resendEmailOtpSchema), authController.resendEmailOtp);
-router.post('/login', validate(loginSchema), authController.login);
-router.post('/logout', authController.logout);
-router.post('/forgot-password', validate(forgotPasswordSchema), authController.forgotPassword);
-router.post('/verify-otp', validate(verifyOtpSchema), authController.verifyOtp);
-router.post('/reset-password', validate(resetPasswordSchema), authController.resetPassword);
+// Public / Optionally Authenticated routes
+router.post('/register', optionalAuth, validate(registerSchema), authController.register);
 
-// Protected routes (Requires Influencer JWT)
+// Protected routes (Requires Unified User JWT)
 router.get('/profile', influencerAuthenticate, authController.getProfile);
 router.put('/profile', influencerAuthenticate, validate(updateProfileSchema), authController.updateProfile);
 

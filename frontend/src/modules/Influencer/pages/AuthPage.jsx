@@ -12,7 +12,6 @@ import {
 import LoginForm from '../components/LoginForm';
 import RegisterForm from '../components/RegisterForm';
 import ForgotPasswordModal from '../components/ForgotPasswordModal';
-import EmailVerificationModal from '../components/EmailVerificationModal';
 import { useInfluencerAuth } from '../hooks/useInfluencerAuth';
 import '../styles/influencerAuth.css';
 
@@ -24,10 +23,6 @@ const AuthPage = () => {
     const [initialLoginEmail, setInitialLoginEmail] = useState('');
     const [isForgotModalOpen, setIsForgotModalOpen] = useState(false);
 
-    // Email verification state
-    const [isVerifyModalOpen, setIsVerifyModalOpen] = useState(false);
-    const [verifyingEmail, setVerifyingEmail] = useState('');
-
     useEffect(() => {
         if (isAuthenticated) {
             navigate('/influencer/dashboard', { replace: true });
@@ -37,16 +32,6 @@ const AuthPage = () => {
     const handleSwitchToLogin = (email = '') => {
         if (email) setInitialLoginEmail(email);
         setActiveTab('login');
-    };
-
-    const handleRequireEmailVerification = (email) => {
-        setVerifyingEmail(email);
-        setIsVerifyModalOpen(true);
-    };
-
-    const handleVerificationSuccess = () => {
-        setIsVerifyModalOpen(false);
-        handleSwitchToLogin(verifyingEmail);
     };
 
     return (
@@ -155,20 +140,11 @@ const AuthPage = () => {
                         ) : (
                             <RegisterForm
                                 onSwitchToLogin={handleSwitchToLogin}
-                                onRequireEmailVerification={handleRequireEmailVerification}
                             />
                         )}
                     </div>
                 </div>
             </div>
-
-            {/* Email Verification Modal */}
-            <EmailVerificationModal
-                isOpen={isVerifyModalOpen}
-                email={verifyingEmail}
-                onClose={() => setIsVerifyModalOpen(false)}
-                onSuccess={handleVerificationSuccess}
-            />
 
             {/* Forgot Password Modal */}
             <ForgotPasswordModal

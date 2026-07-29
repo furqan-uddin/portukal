@@ -2,6 +2,7 @@ import { verifyAccessToken } from '../../../config/jwt.js';
 import ApiError from '../../../utils/ApiError.js';
 import asyncHandler from '../../../utils/asyncHandler.js';
 import Influencer from '../models/Influencer.model.js';
+import User from '../../../models/User.model.js';
 
 export const influencerAuthenticate = asyncHandler(async (req, res, next) => {
     const authHeader = req.headers.authorization;
@@ -13,13 +14,21 @@ export const influencerAuthenticate = asyncHandler(async (req, res, next) => {
     try {
         const decoded = verifyAccessToken(token);
 
-        if (decoded.role !== 'influencer') {
-            throw new ApiError(403, 'Access denied. Influencer authorization required.');
+        // A valid user token should have 'customer' (or perhaps 'user') role
+        if (decoded.role !== 'customer' && decoded.role !== 'user') {
+            throw new ApiError(403, 'Access denied. Valid user authorization required.');
         }
 
-        const influencer = await Influencer.findById(decoded.id);
+        // We find the User
+        const user = await User.findById(decoded.id);
+        if (!user) {
+            throw new ApiError(401, 'User account not found.');
+        }
+
+        // Check if this User has an Influencer profile
+        const influencer = await Influencer.findOne({ user: user._id });
         if (!influencer) {
-            throw new ApiError(401, 'Influencer account not found.');
+            throw new ApiError(403, 'Access denied. You have not registered for the Influencer program.');
         }
 
         if (influencer.status === 'suspended') {
@@ -27,11 +36,11 @@ export const influencerAuthenticate = asyncHandler(async (req, res, next) => {
         }
 
         req.influencer = influencer;
-        req.user = { id: influencer._id, role: 'influencer', email: influencer.email };
+        req.user = user;
         next();
     } catch (err) {
         if (err instanceof ApiError) throw err;
-        throw new ApiError(401, 'Invalid or expired influencer token.');
+        throw new ApiError(401, 'Invalid or expired token.');
     }
 });
 

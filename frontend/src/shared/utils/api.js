@@ -29,9 +29,9 @@ const AUTH_SCOPES = {
   },
   influencer: {
     prefix: '/influencer',
-    accessKey: 'influencer-token',
-    refreshKey: 'influencer-refresh-token',
-    persistKey: 'influencer-auth-storage',
+    accessKey: 'token',
+    refreshKey: 'refresh-token',
+    persistKey: 'auth-storage',
     loginPath: '/influencer',
     areaPrefix: '/influencer',
   },

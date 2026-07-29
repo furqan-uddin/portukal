@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
-import { useInfluencerAuthStore } from '../store/influencerAuthStore';
+import { useUnifiedInfluencerAuth } from '../store/influencerAuthStore';
 
 const decodeJwtPayload = (token) => {
     try {
@@ -15,22 +15,24 @@ const decodeJwtPayload = (token) => {
 };
 
 const InfluencerProtectedRoute = ({ children }) => {
-    const { isAuthenticated, token, logout } = useInfluencerAuthStore();
+    const { isAuthenticated, token, logout } = useUnifiedInfluencerAuth();
     const location = useLocation();
-    const accessToken = token || localStorage.getItem('influencer-token');
+    const accessToken = token || localStorage.getItem('token') || localStorage.getItem('influencer-token');
 
     const payload = decodeJwtPayload(accessToken);
     const role = String(payload?.role || '').toLowerCase();
     const tokenExpiryMs = typeof payload?.exp === 'number' ? payload.exp * 1000 : null;
     const isExpired = tokenExpiryMs ? Date.now() >= tokenExpiryMs : false;
 
+    const isValidRole = role === 'customer' || role === 'influencer' || role === 'user';
+
     useEffect(() => {
-        if (isAuthenticated && (isExpired || (role && accessToken && role !== 'influencer'))) {
+        if (isAuthenticated && (isExpired || (role && accessToken && !isValidRole))) {
             logout();
         }
-    }, [isAuthenticated, isExpired, role, accessToken, logout]);
+    }, [isAuthenticated, isExpired, role, accessToken, logout, isValidRole]);
 
-    if (!isAuthenticated || !accessToken || isExpired || (role && accessToken && role !== 'influencer')) {
+    if (!isAuthenticated || !accessToken || isExpired || (role && accessToken && !isValidRole)) {
         return <Navigate to="/influencer" state={{ from: location }} replace />;
     }
 

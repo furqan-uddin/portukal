@@ -1,5 +1,5 @@
 import Influencer from '../models/Influencer.model.js';
-import { signAccessToken, signRefreshToken } from '../../../config/jwt.js';
+import User from '../../../models/User.model.js';
 import ApiError from '../../../utils/ApiError.js';
 import { sendEmail } from '../../../services/email.service.js';
 
@@ -33,7 +33,7 @@ const generateUniqueReferralCode = async () => {
     return code;
 };
 
-export const registerInfluencerService = async (data) => {
+export const registerInfluencerService = async (data, loggedInUserId = null) => {
     const {
         name,
         email,
@@ -48,20 +48,58 @@ export const registerInfluencerService = async (data) => {
         aadhaarNumber,
     } = data;
 
-    const normalizedEmail = String(email).toLowerCase().trim();
-    const normalizedMobile = String(mobile).trim();
+    const normalizedEmail = String(email || '').toLowerCase().trim();
+    const normalizedMobile = String(mobile || '').trim();
 
-    const existingEmail = await Influencer.findOne({ email: normalizedEmail });
-    if (existingEmail) {
-        throw new ApiError(400, 'An influencer account with this email address already exists.');
+    let user = null;
+
+    if (loggedInUserId) {
+        user = await User.findById(loggedInUserId);
+        if (!user) {
+            throw new ApiError(404, 'User account not found.');
+        }
+    } else {
+        user = await User.findOne({ email: normalizedEmail }).select('+password');
+        if (user) {
+            // User exists: verify password to confirm ownership before linking influencer application
+            if (!password) {
+                throw new ApiError(400, 'An account with this email already exists. Please enter your password to link your Influencer application.');
+            }
+            const isMatch = await user.comparePassword(password);
+            if (!isMatch) {
+                throw new ApiError(401, 'Incorrect password for existing user account.');
+            }
+        } else {
+            // New user registration
+            if (!password) {
+                throw new ApiError(400, 'Password is required to create your account.');
+            }
+            user = new User({
+                name: name || 'Creator',
+                email: normalizedEmail,
+                password,
+                phone: normalizedMobile,
+                isVerified: true,
+            });
+            await user.save();
+        }
     }
 
-    const existingMobile = await Influencer.findOne({ mobile: normalizedMobile });
-    if (existingMobile) {
-        throw new ApiError(400, 'An influencer account with this mobile number already exists.');
+    // Check if user has already registered an Influencer profile
+    const existingProfile = await Influencer.findOne({ user: user._id });
+    if (existingProfile) {
+        throw new ApiError(400, 'You have already submitted an Influencer application with this account.');
     }
 
-    const slug = await generateUniqueSlug(name);
+    if (normalizedMobile) {
+        const existingMobile = await Influencer.findOne({ mobile: normalizedMobile, user: { $ne: user._id } });
+        if (existingMobile) {
+            throw new ApiError(400, 'An influencer account with this mobile number already exists.');
+        }
+    }
+
+    const influencerName = name || user.name || 'Creator';
+    const slug = await generateUniqueSlug(influencerName);
     const referralCode = await generateUniqueReferralCode();
 
     // Mask Aadhaar Number if provided
@@ -71,20 +109,13 @@ export const registerInfluencerService = async (data) => {
         maskedAadhaar = `XXXX XXXX ${cleanAadhaar.slice(-4)}`;
     }
 
-    // Generate 6-digit email OTP
-    const emailOtp = Math.floor(100000 + Math.random() * 900000).toString();
-    const emailOtpExpiry = new Date(Date.now() + 15 * 60 * 1000); // 15 mins
-
     const influencer = new Influencer({
-        name,
+        user: user._id,
+        name: influencerName,
         slug,
         referralCode,
-        email: normalizedEmail,
-        isEmailVerified: false,
-        emailOtp,
-        emailOtpExpiry,
-        mobile: normalizedMobile,
-        password,
+        email: normalizedEmail || user.email,
+        mobile: normalizedMobile || user.phone || '',
         profileImage: profileImage || '',
         bio: bio || '',
         followers: Number(followers) || 0,
@@ -104,235 +135,28 @@ export const registerInfluencerService = async (data) => {
 
     await influencer.save();
 
-    // Async Email Verification OTP email
+    // Send Welcome Email
     sendEmail({
         to: influencer.email,
-        subject: 'Verify Your Email — Porutkal Influencer Program',
+        subject: 'Welcome to the Porutkal Influencer Program!',
         html: `
             <h2>Welcome to Porutkal Marketplace, ${influencer.name}!</h2>
-            <p>Your 6-digit Email Verification OTP code is:</p>
-            <h1 style="font-size: 32px; letter-spacing: 5px; color: #7C3AED;">${emailOtp}</h1>
+            <p>Your influencer application has been submitted and is currently under review.</p>
             <p>Your unique referral code is: <strong>${referralCode}</strong></p>
             <p>Your creator storefront handle: <strong>porutkal.com/@${slug}</strong></p>
+            <p>You can now log in using your user credentials to check your application status.</p>
             <br>
             <p>Best regards,<br>The Porutkal Marketplace Team</p>
         `,
-    }).catch((err) => console.error('Failed to send email OTP:', err.message));
+    }).catch((err) => console.error('Failed to send welcome email:', err.message));
 
     return {
         success: true,
-        message: 'Registration submitted! Please verify your email with the 6-digit OTP sent to your inbox.',
+        message: 'Registration successful! You can now log in to check your application status.',
         email: influencer.email,
         slug: influencer.slug,
         referralCode: influencer.referralCode,
-        requiresEmailVerification: true,
     };
-};
-
-export const verifyEmailOtpService = async (email, otp) => {
-    const normalizedEmail = String(email).toLowerCase().trim();
-
-    const influencer = await Influencer.findOne({ email: normalizedEmail }).select(
-        '+emailOtp +emailOtpExpiry'
-    );
-
-    if (!influencer) {
-        throw new ApiError(404, 'Influencer account not found.');
-    }
-
-    if (influencer.isEmailVerified) {
-        return { success: true, message: 'Email address is already verified.' };
-    }
-
-    if (!influencer.emailOtp || influencer.emailOtp !== String(otp).trim()) {
-        throw new ApiError(400, 'Invalid email verification OTP code.');
-    }
-
-    if (Date.now() > new Date(influencer.emailOtpExpiry).getTime()) {
-        throw new ApiError(400, 'Email verification OTP has expired. Please request a new one.');
-    }
-
-    influencer.isEmailVerified = true;
-    influencer.emailOtp = undefined;
-    influencer.emailOtpExpiry = undefined;
-    await influencer.save();
-
-    return { success: true, message: 'Email verified successfully! You can now log in to view your status.' };
-};
-
-export const resendEmailOtpService = async (email) => {
-    const normalizedEmail = String(email).toLowerCase().trim();
-
-    const influencer = await Influencer.findOne({ email: normalizedEmail });
-    if (!influencer) {
-        throw new ApiError(404, 'Influencer account not found.');
-    }
-
-    if (influencer.isEmailVerified) {
-        return { success: true, message: 'Email address is already verified.' };
-    }
-
-    const emailOtp = Math.floor(100000 + Math.random() * 900000).toString();
-    const emailOtpExpiry = new Date(Date.now() + 15 * 60 * 1000);
-
-    influencer.emailOtp = emailOtp;
-    influencer.emailOtpExpiry = emailOtpExpiry;
-    await influencer.save();
-
-    await sendEmail({
-        to: influencer.email,
-        subject: 'Verify Your Email — Porutkal Influencer Program',
-        html: `
-            <h2>Email Verification OTP</h2>
-            <p>Your new 6-digit OTP code to verify your email is:</p>
-            <h1 style="font-size: 32px; letter-spacing: 5px; color: #7C3AED;">${emailOtp}</h1>
-            <p>This OTP will expire in 15 minutes.</p>
-        `,
-    });
-
-    return { success: true, message: 'New email verification OTP sent to your registered inbox.' };
-};
-
-export const loginInfluencerService = async (email, password) => {
-    const normalizedEmail = String(email).toLowerCase().trim();
-
-    const influencer = await Influencer.findOne({ email: normalizedEmail }).select(
-        '+password +failedLoginAttempts +lockUntil'
-    );
-    if (!influencer) {
-        throw new ApiError(401, 'Invalid email address or password.');
-    }
-
-    if (!influencer.isEmailVerified) {
-        throw new ApiError(403, 'Email address is not verified. Please verify your email OTP before logging in.', { requiresEmailVerification: true });
-    }
-
-    // Check account lockout
-    if (influencer.lockUntil && Date.now() < new Date(influencer.lockUntil).getTime()) {
-        const remainingMins = Math.ceil((new Date(influencer.lockUntil).getTime() - Date.now()) / (60 * 1000));
-        throw new ApiError(423, `Account temporarily locked due to multiple failed attempts. Try again in ${remainingMins} minutes.`);
-    }
-
-    const isMatch = await influencer.comparePassword(password);
-    if (!isMatch) {
-        influencer.failedLoginAttempts = (influencer.failedLoginAttempts || 0) + 1;
-        if (influencer.failedLoginAttempts >= 5) {
-            influencer.lockUntil = new Date(Date.now() + 15 * 60 * 1000); // 15 mins lock
-        }
-        await influencer.save();
-        throw new ApiError(401, 'Invalid email address or password.');
-    }
-
-    if (influencer.status === 'suspended') {
-        throw new ApiError(403, 'Your influencer account has been suspended. Reason: ' + (influencer.rejectionReason || 'Policy violation'));
-    }
-
-    // Reset lock counters and update last login
-    influencer.failedLoginAttempts = 0;
-    influencer.lockUntil = undefined;
-    influencer.lastLogin = new Date();
-    await influencer.save();
-
-    const tokenPayload = {
-        id: influencer._id,
-        role: 'influencer',
-        email: influencer.email,
-    };
-
-    const accessToken = signAccessToken(tokenPayload);
-    const refreshToken = signRefreshToken(tokenPayload);
-
-    const safeInfluencer = influencer.toObject();
-    delete safeInfluencer.password;
-    delete safeInfluencer.failedLoginAttempts;
-    delete safeInfluencer.lockUntil;
-
-    return {
-        influencer: safeInfluencer,
-        accessToken,
-        refreshToken,
-    };
-};
-
-export const forgotPasswordService = async (email) => {
-    const normalizedEmail = String(email).toLowerCase().trim();
-
-    const influencer = await Influencer.findOne({ email: normalizedEmail });
-    if (!influencer) {
-        throw new ApiError(404, 'No influencer account found with this email address.');
-    }
-
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
-    const otpExpiry = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
-
-    influencer.resetOtp = otp;
-    influencer.resetOtpExpiry = otpExpiry;
-    influencer.resetOtpVerified = false;
-    await influencer.save();
-
-    await sendEmail({
-        to: influencer.email,
-        subject: 'Password Reset OTP — Porutkal Influencer Portal',
-        html: `
-            <h2>Password Reset Request</h2>
-            <p>Hello ${influencer.name},</p>
-            <p>Your 6-digit OTP code to reset your password is:</p>
-            <h1 style="font-size: 32px; letter-spacing: 5px; color: #7C3AED;">${otp}</h1>
-            <p>This OTP will expire in 15 minutes. If you did not request this, please ignore this email.</p>
-        `,
-    });
-
-    return { success: true, message: 'Password reset OTP sent to your registered email address.' };
-};
-
-export const verifyResetOtpService = async (email, otp) => {
-    const normalizedEmail = String(email).toLowerCase().trim();
-
-    const influencer = await Influencer.findOne({ email: normalizedEmail }).select('+resetOtp +resetOtpExpiry');
-    if (!influencer || !influencer.resetOtp) {
-        throw new ApiError(400, 'Invalid OTP or no reset request found.');
-    }
-
-    if (influencer.resetOtp !== String(otp).trim()) {
-        throw new ApiError(400, 'Invalid OTP code.');
-    }
-
-    if (Date.now() > new Date(influencer.resetOtpExpiry).getTime()) {
-        throw new ApiError(400, 'OTP code has expired. Please request a new one.');
-    }
-
-    influencer.resetOtpVerified = true;
-    await influencer.save();
-
-    return { success: true, message: 'OTP verified successfully.' };
-};
-
-export const resetPasswordService = async (email, otp, password) => {
-    const normalizedEmail = String(email).toLowerCase().trim();
-
-    const influencer = await Influencer.findOne({ email: normalizedEmail }).select(
-        '+password +resetOtp +resetOtpExpiry +resetOtpVerified'
-    );
-
-    if (!influencer || influencer.resetOtp !== String(otp).trim()) {
-        throw new ApiError(400, 'Invalid OTP session. Please request a new OTP.');
-    }
-
-    if (!influencer.resetOtpVerified) {
-        throw new ApiError(400, 'OTP must be verified before resetting password.');
-    }
-
-    if (Date.now() > new Date(influencer.resetOtpExpiry).getTime()) {
-        throw new ApiError(400, 'OTP code has expired. Please request a new one.');
-    }
-
-    influencer.password = password;
-    influencer.resetOtp = undefined;
-    influencer.resetOtpExpiry = undefined;
-    influencer.resetOtpVerified = undefined;
-    await influencer.save();
-
-    return { success: true, message: 'Password has been reset successfully. You can now login.' };
 };
 
 export const getProfileService = async (influencerId) => {
