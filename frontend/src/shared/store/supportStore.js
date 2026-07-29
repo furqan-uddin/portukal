@@ -17,9 +17,12 @@ export const useSupportStore = create((set, get) => ({
         set({ isLoading: true });
         try {
             const response = await adminService.getAllTickets(params);
+            const tickets = response?.tickets || response?.data?.tickets || (Array.isArray(response) ? response : []);
+            const pagination = response?.pagination || response?.data?.pagination || { total: tickets.length, page: 1, limit: 10, pages: 1 };
+
             set({
-                tickets: response.data.tickets,
-                pagination: response.data.pagination,
+                tickets,
+                pagination,
                 isLoading: false
             });
         } catch (error) {
@@ -33,7 +36,7 @@ export const useSupportStore = create((set, get) => ({
         try {
             const response = await adminService.getTicketById(id);
             set({ isLoading: false });
-            return response.data;
+            return response?.ticket || response?.data || response;
         } catch (error) {
             set({ isLoading: false });
             toast.error(error.message || 'Failed to fetch ticket details');
@@ -63,7 +66,7 @@ export const useSupportStore = create((set, get) => ({
             const response = await adminService.addTicketMessage(id, message);
             set({ isLoading: false });
             toast.success('Reply added successfully');
-            return response.data;
+            return response?.data || response;
         } catch (error) {
             set({ isLoading: false });
             toast.error(error.message || 'Failed to add reply');

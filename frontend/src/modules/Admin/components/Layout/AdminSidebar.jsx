@@ -80,6 +80,7 @@ const getChildRoute = (parentRoute, childName) => {
       "Withdrawal Requests": "/admin/influencers/withdrawals",
       "Affiliate Analytics": "/admin/influencer/analytics",
       "Fraud Risk Engine": "/admin/influencer/fraud",
+      "Influencer Support": "/admin/influencer-support",
     },
     "/admin/delivery": {
       "Delivery Boys": "/admin/delivery/delivery-boys",

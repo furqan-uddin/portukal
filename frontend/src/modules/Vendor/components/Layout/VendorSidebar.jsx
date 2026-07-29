@@ -42,6 +42,7 @@ const iconMap = {
   "Category Requests": FiLayers,
   "Website Builder": FiLayout,
   "Store Builder": FiLayout,
+  "Creator Collaborations": FiUsers,
   Orders: FiShoppingBag,
   "Returns & Exchanges": FiRefreshCw,
   "Product Reviews": FiStar,
