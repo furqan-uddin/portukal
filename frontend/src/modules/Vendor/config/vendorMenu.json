@@ -30,6 +30,16 @@
         "children": []
     },
     {
+        "title": "Reels",
+        "route": "/vendor/reels",
+        "children": [
+            "My Reels",
+            "Upload Reel",
+            "Invite Influencers",
+            "Reel Analytics"
+        ]
+    },
+    {
         "title": "Commission Escrow",
         "route": "/vendor/influencer-wallet",
         "children": []

@@ -389,7 +389,7 @@ const AdminSidebar = ({ isOpen, onClose, isCollapsed }) => {
       </div>
 
       {/* Navigation Menu */}
-      <nav className="flex-1 overflow-y-auto p-3 scrollbar-admin lg:pb-3">
+      <nav className="flex-1 overflow-y-auto p-3 scrollbar-hide lg:pb-3">
         {adminMenu.map((item) => renderMenuItem(item))}
       </nav>
     </div>

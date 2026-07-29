@@ -10,7 +10,8 @@ import {
     FiLock,
     FiLogOut,
     FiAward,
-    FiX
+    FiX,
+    FiFilm,
 } from 'react-icons/fi';
 import { useInfluencerAuth } from '../hooks/useInfluencerAuth';
 import toast from 'react-hot-toast';
@@ -28,6 +29,7 @@ const InfluencerSidebar = ({ isOpen, setIsOpen, isCollapsed }) => {
         { title: 'My Affiliate Links', route: '/influencer/affiliate-links', icon: FiLink, requiresApproval: true },
         { title: 'Wallet & Withdrawals', route: '/influencer/wallet', icon: FiDollarSign, requiresApproval: true },
         { title: 'Analytics BI', route: '/influencer/analytics', icon: FiBarChart2, requiresApproval: true },
+        { title: 'Reels Marketplace', route: '/influencer/reels', icon: FiFilm, requiresApproval: true },
         { title: 'Profile', route: '/influencer/profile', icon: FiUser, requiresApproval: false },
         { title: 'Support', route: '/influencer/support', icon: FiHelpCircle, requiresApproval: false },
     ];
@@ -108,7 +110,7 @@ const InfluencerSidebar = ({ isOpen, setIsOpen, isCollapsed }) => {
                 </div>
 
                 {/* Navigation Menu */}
-                <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
+                <nav className="flex-1 p-3 space-y-1 overflow-y-auto scrollbar-hide">
                     {navItems.map((item) => {
                         const Icon = item.icon;
                         const isActive = location.pathname === item.route;

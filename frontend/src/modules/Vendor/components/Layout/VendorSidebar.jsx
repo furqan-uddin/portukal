@@ -28,6 +28,7 @@ import {
   FiFile,
   FiAward,
   FiLayers,
+  FiFilm,
 } from "react-icons/fi";
 import { useVendorAuthStore } from "../../store/vendorAuthStore";
 import vendorMenu from "../../config/vendorMenu.json";
@@ -58,6 +59,10 @@ const iconMap = {
   Earnings: FiDollarSign,
   Settings: FiSettings,
   Profile: FiUser,
+  Reels: FiFilm,
+  "My Reels": FiFilm,
+  "Upload Reel": FiFilm,
+  "Reel Analytics": FiBarChart2,
 };
 
 // Helper function to convert child name to route path
@@ -79,6 +84,12 @@ const getChildRoute = (parentRoute, childName) => {
     "/vendor/settings": {
       "Store Settings": "/vendor/settings/store",
       "Payment Settings": "/vendor/settings/payment",
+    },
+    "/vendor/reels": {
+      "My Reels": "/vendor/reels",
+      "Upload Reel": "/vendor/reels/upload",
+      "Invite Influencers": "/vendor/influencers/invite",
+      "Reel Analytics": "/vendor/reels/analytics",
     },
   };
 
@@ -228,6 +239,7 @@ const VendorSidebar = ({ isOpen, onClose, isCollapsed }) => {
                   const isChildActive =
                     location.pathname === childRoute ||
                     (childRoute !== item.route &&
+                      childRoute !== "/vendor/reels" &&
                       location.pathname.startsWith(childRoute));
 
                   return (
@@ -289,7 +301,7 @@ const VendorSidebar = ({ isOpen, onClose, isCollapsed }) => {
       </div>
 
       {/* Navigation Menu */}
-      <nav className="flex-1 overflow-y-auto p-3 scrollbar-admin lg:pb-3">
+      <nav className="flex-1 overflow-y-auto p-3 scrollbar-hide lg:pb-3">
         {vendorMenu.map((item) => renderMenuItem(item))}
       </nav>
     </div>

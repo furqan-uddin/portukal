@@ -1,162 +1,311 @@
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ShoppingBag, X, Star, Minus, Plus } from 'lucide-react';
-import ReelActions from './ReelActions';
-import { useAffiliate } from '../../Affiliate/hooks/useAffiliate';
+import { ShoppingBag, X, Heart, Send, MessageCircle, Bookmark, Flag, MoreHorizontal, Music } from 'lucide-react';
+import api from '../../../shared/utils/api';
+import toast from 'react-hot-toast';
 
-const ReelCard = ({ reel, toggleLike, shareReel, saveReel, reportReel }) => {
+// ─── Comment Section ────────────────────────────────────────────────────────
+const CommentSection = ({ reelId, onClose }) => {
+    const [comments, setComments] = useState([]);
+    const [text, setText] = useState('');
+    const [loading, setLoading] = useState(false);
+    const [submitting, setSubmitting] = useState(false);
+
+    const fetchComments = useCallback(async () => {
+        setLoading(true);
+        try {
+            const data = await api.get(`/reels/${reelId}/comments`);
+            setComments(data.comments || []);
+        } catch {} finally { setLoading(false); }
+    }, [reelId]);
+
+    useEffect(() => { fetchComments(); }, [fetchComments]);
+
+    const handleSubmit = async () => {
+        if (!text.trim()) return;
+        setSubmitting(true);
+        try {
+            const data = await api.post(`/reels/${reelId}/comments`, { comment: text.trim() });
+            setComments((prev) => [data, ...prev]);
+            setText('');
+        } catch {} finally { setSubmitting(false); }
+    };
+
+    const handleLikeComment = async (commentId) => {
+        try { await api.post(`/reels/comments/${commentId}/like`); } catch {}
+    };
+
+    return (
+        <div className="absolute inset-0 z-[60] flex items-end">
+            <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px] pointer-events-auto" onClick={onClose} />
+            <div className="relative w-full h-[75%] bg-neutral-900 rounded-t-[2.5rem] flex flex-col shadow-2xl border-t border-white/10 pointer-events-auto">
+                <div className="w-full flex justify-center py-3"><div className="w-10 h-1 rounded-full bg-white/20" /></div>
+                <div className="flex items-center justify-between px-6 pb-4 border-b border-white/10">
+                    <span className="text-white font-bold text-lg">Comments {comments.length > 0 && `(${comments.length})`}</span>
+                    <button onClick={onClose} className="p-1 rounded-full hover:bg-white/10 text-white/70"><X size={22} /></button>
+                </div>
+
+                {/* Comments List */}
+                <div className="flex-1 overflow-y-auto px-4 py-3 space-y-4 no-scrollbar">
+                    {loading && <div className="text-white/40 text-sm text-center py-4">Loading...</div>}
+                    {!loading && comments.length === 0 && (
+                        <div className="text-center py-8 text-white/40">
+                            <MessageCircle size={32} className="mx-auto mb-2 opacity-50" />
+                            <p className="text-sm">No comments yet. Be the first!</p>
+                        </div>
+                    )}
+                    {comments.map((c) => (
+                        <div key={c._id} className="flex gap-3">
+                            <div className="h-9 w-9 rounded-full bg-neutral-800 flex-shrink-0 overflow-hidden">
+                                {c.userId?.profileImage
+                                    ? <img src={c.userId.profileImage} alt="" className="w-full h-full object-cover" />
+                                    : <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${c.userId?._id}`} alt="" className="w-full h-full" />
+                                }
+                            </div>
+                            <div className="flex-1">
+                                <div className="flex items-center gap-2">
+                                    <span className="text-white font-semibold text-xs">{c.userId?.name || 'User'}</span>
+                                    <span className="text-white/30 text-[10px]">{new Date(c.createdAt).toLocaleDateString()}</span>
+                                </div>
+                                <p className="text-white/90 text-sm mt-0.5 leading-relaxed">{c.comment}</p>
+                                <div className="flex items-center gap-4 mt-1">
+                                    <button onClick={() => handleLikeComment(c._id)} className="text-white/40 text-[11px] font-semibold hover:text-red-400 transition-colors">❤️ Like</button>
+                                    <button className="text-white/40 text-[11px] font-semibold hover:text-white/70 transition-colors">Reply</button>
+                                </div>
+                                {/* Replies */}
+                                {c.replies?.map((r) => (
+                                    <div key={r._id} className="flex gap-2 mt-2 ml-2">
+                                        <div className="w-6 h-6 rounded-full bg-neutral-700 flex-shrink-0 overflow-hidden">
+                                            <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${r.userId?._id}`} alt="" className="w-full h-full" />
+                                        </div>
+                                        <div>
+                                            <span className="text-white/60 text-[11px] font-semibold">{r.userId?.name || 'User'} </span>
+                                            <span className="text-white/80 text-[11px]">{r.comment}</span>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    ))}
+                </div>
+
+                {/* Input */}
+                <div className="p-4 border-t border-white/10 bg-neutral-900 pb-8">
+                    <div className="flex items-center gap-3 bg-neutral-800 rounded-full px-4 py-2 border border-white/5">
+                        <input
+                            value={text} onChange={(e) => setText(e.target.value)}
+                            onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
+                            placeholder="Add a comment..."
+                            className="flex-1 bg-transparent text-white text-sm outline-none placeholder:text-white/30"
+                        />
+                        <button onClick={handleSubmit} disabled={submitting || !text.trim()} className="text-purple-400 font-bold text-sm px-2 disabled:opacity-40">
+                            {submitting ? '…' : 'Post'}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+// ─── ReelActions ────────────────────────────────────────────────────────────
+const ReelActions = ({ reel, onLike, onShare, onSave, onReport, onComment }) => {
+    const [showMore, setShowMore] = useState(false);
+    const reelId = reel._id || reel.id;
+
+    return (
+        <div className="flex flex-col items-center gap-5 text-white">
+            {/* Like */}
+            <button onClick={() => onLike(reelId)} className="flex flex-col items-center group">
+                <Heart size={30} fill={reel.isLiked ? 'currentColor' : 'none'} strokeWidth={2.5}
+                    className={`${reel.isLiked ? 'text-red-500' : 'text-white'} drop-shadow-lg transition-all`} />
+                <span className="text-[10px] font-bold drop-shadow-md">{(reel.likesCount || reel.likes || 0).toLocaleString()}</span>
+            </button>
+
+            {/* Comment */}
+            <button onClick={onComment} className="flex flex-col items-center group">
+                <MessageCircle size={30} strokeWidth={2.5} className="drop-shadow-lg" />
+                <span className="text-[10px] font-bold drop-shadow-md">{(reel.commentsCount || 0).toLocaleString()}</span>
+            </button>
+
+            {/* Share */}
+            <button onClick={() => onShare(reelId)} className="flex flex-col items-center group">
+                <Send size={30} strokeWidth={2.5} className="drop-shadow-lg -rotate-12 mb-1" />
+                <span className="text-[10px] font-bold drop-shadow-md">Share</span>
+            </button>
+
+            {/* More */}
+            <div className="relative">
+                <button onClick={() => setShowMore(!showMore)} className="flex flex-col items-center group">
+                    <MoreHorizontal size={30} strokeWidth={2.5} className="drop-shadow-lg" />
+                </button>
+                {showMore && (
+                    <div className="absolute right-full mr-4 bottom-0 bg-black/80 backdrop-blur-xl rounded-2xl p-2 flex flex-col gap-1 border border-white/20 shadow-2xl min-w-[140px] z-50 text-white">
+                        <button onClick={() => { onSave(reelId); setShowMore(false); }}
+                            className="flex items-center gap-3 px-4 py-2.5 hover:bg-white/10 rounded-xl transition-colors text-sm font-medium">
+                            <Bookmark size={16} /> {reel.isSaved ? 'Unsave' : 'Save'}
+                        </button>
+                        <div className="h-px bg-white/10 mx-2" />
+                        <button onClick={() => { onReport(reelId); setShowMore(false); }}
+                            className="flex items-center gap-3 px-4 py-2.5 hover:bg-white/10 rounded-xl transition-colors text-sm font-medium text-red-400">
+                            <Flag size={16} /> Report
+                        </button>
+                    </div>
+                )}
+            </div>
+
+            {/* Audio */}
+            <button className="flex flex-col items-center group mt-2">
+                <Music size={22} strokeWidth={2.5} className="drop-shadow-lg animate-spin-slow" />
+            </button>
+        </div>
+    );
+};
+
+// ─── ReelCard ────────────────────────────────────────────────────────────────
+const ReelCard = ({ reel, toggleLike, shareReel, saveReel, reportReel, onView, onProductClick }) => {
     const [showComments, setShowComments] = useState(false);
     const videoRef = useRef(null);
     const navigate = useNavigate();
-    const { trackClick } = useAffiliate();
+    const viewTrackedRef = useRef(false);
+    const watchStartRef = useRef(null);
+    const reelId = reel._id || reel.id;
 
-    // Auto-play / Pause logic based on visibility
+    // Auto-play / Pause + view tracking
     useEffect(() => {
         const observer = new IntersectionObserver(
             ([entry]) => {
                 if (entry.isIntersecting) {
-                    videoRef.current?.play().catch(e => console.log('Autoplay blocked:', e));
+                    videoRef.current?.play().catch(() => {});
+                    if (!viewTrackedRef.current) {
+                        viewTrackedRef.current = true;
+                        watchStartRef.current = Date.now();
+                        // Track view after 1 second
+                        setTimeout(() => {
+                            if (onView) onView(reelId, { reached3s: false });
+                        }, 1000);
+                    }
                 } else {
                     videoRef.current?.pause();
                     if (videoRef.current) videoRef.current.currentTime = 0;
+                    // Track watch duration on leave
+                    if (watchStartRef.current && onView) {
+                        const watchDuration = Math.round((Date.now() - watchStartRef.current) / 1000);
+                        const duration = videoRef.current?.duration || 1;
+                        const completed = watchDuration >= duration * 0.9;
+                        onView(reelId, {
+                            watchDuration,
+                            completed,
+                            reached3s: watchDuration >= 3,
+                            reached10s: watchDuration >= 10,
+                        });
+                        watchStartRef.current = null;
+                    }
                 }
             },
             { threshold: 0.5 }
         );
-
-        if (videoRef.current) {
-            observer.observe(videoRef.current);
-        }
-
+        if (videoRef.current) observer.observe(videoRef.current);
         return () => observer.disconnect();
-    }, []);
+    }, [reelId, onView]);
 
-    const handleViewProduct = () => {
-        trackClick(reel.productId, reel.id, 'creator_99'); // Track affiliate click
-        navigate(`/product/${reel.productId}`);
+    const handleViewProduct = (productId) => {
+        const pid = productId || reel.productId?._id || reel.productId;
+        if (pid && onProductClick) onProductClick(reelId, pid);
+        const slug = reel.productId?.slug || pid;
+        if (slug) navigate(`/product/${slug}`);
     };
 
+    const vendorName = reel.vendorId?.storeName || reel.creatorName || 'vendor';
+    const videoSrc = reel.video?.secureUrl || reel.videoUrl;
+
     return (
-        <div className="relative h-screen w-full md:max-w-[calc(100vh*9/16)] bg-black snap-start overflow-hidden group shrink-0">
+        <div className="relative h-screen w-full md:max-w-[calc(100vh*9/16)] bg-black snap-start overflow-hidden shrink-0 mx-auto">
             {/* Background Video */}
             <video
                 ref={videoRef}
                 className="h-full w-full object-cover"
-                src={reel.videoUrl}
-                loop
-                muted
-                autoPlay
-                playsInline
-                preload="auto"
+                src={videoSrc}
+                poster={reel.thumbnailUrl}
+                loop muted autoPlay playsInline preload="auto"
             />
 
-            {/* Bottom Gradient Overlay */}
+            {/* Gradient Overlay */}
             <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/80 to-transparent pointer-events-none" />
 
-            {/* Interactions Overlay */}
+            {/* Actions */}
             <div className="absolute right-4 bottom-20 z-30">
-                <ReelActions 
-                    reel={reel} 
-                    onLike={toggleLike} 
-                    onShare={shareReel} 
-                    onSave={saveReel} 
+                <ReelActions
+                    reel={reel}
+                    onLike={toggleLike}
+                    onShare={shareReel}
+                    onSave={saveReel}
                     onReport={reportReel}
                     onComment={() => setShowComments(true)}
-                    onCartClick={handleViewProduct}
                 />
             </div>
 
-            {/* Content & Creator Info */}
+            {/* Vendor info + caption */}
             <div className="absolute left-4 right-20 bottom-20 z-10 flex flex-col gap-3">
-                {/* Creator Profile Section */}
                 <div className="flex items-center gap-3">
-                    <div 
-                        onClick={() => navigate(`/creator/${reel.creatorName || 'style_curator'}`)}
-                        className="h-10 w-10 rounded-full border border-white/50 overflow-hidden shadow-lg flex-shrink-0 bg-neutral-800 cursor-pointer active:scale-90 transition-all"
-                    >
-                        <img 
-                            src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${reel.id}`} 
-                            alt="creator" 
-                            className="h-full w-full object-cover" 
-                        />
+                    <div className="h-10 w-10 rounded-full border border-white/50 overflow-hidden shadow-lg flex-shrink-0 bg-neutral-800">
+                        {reel.vendorId?.logoUrl
+                            ? <img src={reel.vendorId.logoUrl} alt={vendorName} className="w-full h-full object-cover" />
+                            : <img src={`https://api.dicebear.com/7.x/shapes/svg?seed=${vendorName}`} alt={vendorName} className="w-full h-full" />
+                        }
                     </div>
                     <div className="flex items-center gap-3">
-                        <span 
-                            onClick={() => navigate(`/creator/${reel.creatorName || 'style_curator'}`)}
-                            className="font-bold text-white text-sm drop-shadow-md tracking-tight cursor-pointer active:opacity-70 transition-all"
-                        >
-                            {reel.creatorName || "style_curator"}
-                        </span>
-                        <button className="px-4 py-1.5 rounded-lg border border-white/40 bg-white/10 backdrop-blur-md text-xs font-bold text-white transition-all active:scale-95 hover:bg-white/20">
+                        <span className="font-bold text-white text-sm drop-shadow-md">{vendorName}</span>
+                        <button className="px-3 py-1 rounded-lg border border-white/40 bg-white/10 backdrop-blur-md text-xs font-bold text-white hover:bg-white/20 transition-all">
                             Follow
                         </button>
                     </div>
                 </div>
 
-                {/* Caption / Description */}
-                <div className="text-white drop-shadow-lg max-w-full">
-                    <p className="text-[15px] leading-snug font-medium line-clamp-2">
-                        {reel.caption}
-                    </p>
-                </div>
+                {/* Caption */}
+                {reel.caption && (
+                    <p className="text-white text-[14px] leading-snug font-medium line-clamp-2 drop-shadow-lg">{reel.caption}</p>
+                )}
 
-            </div>
-            
-            {/* Comments Section Modal */}
-            {showComments && (
-                <div className="absolute inset-0 z-[60] flex items-end">
-                    {/* Backdrop */}
-                    <div 
-                        className="absolute inset-0 bg-black/40 backdrop-blur-[2px] pointer-events-auto" 
-                        onClick={() => setShowComments(false)}
-                    />
-                    {/* Comment Sheet */}
-                    <div className="relative w-full h-[70%] bg-neutral-900 rounded-t-[2.5rem] flex flex-col shadow-2xl animate-in slide-in-from-bottom duration-300 border-t border-white/10 pointer-events-auto">
-                        {/* Drag Handle */}
-                        <div className="w-full flex justify-center py-3">
-                            <div className="w-10 h-1 rounded-full bg-white/20" />
-                        </div>
-                        {/* Header */}
-                        <div className="flex items-center justify-between px-6 pb-4 border-b border-white/10">
-                            <span className="text-white font-bold text-lg">Comments</span>
-                            <button 
-                                onClick={() => setShowComments(false)}
-                                className="p-1 rounded-full hover:bg-white/10 text-white/70"
+                {/* Tagged Products */}
+                {(reel.taggedProducts?.length > 0 || reel.productId) && (
+                    <div className="flex gap-2 flex-wrap">
+                        {/* Primary product */}
+                        {reel.productId && (
+                            <button
+                                onClick={() => handleViewProduct(reel.productId?._id || reel.productId)}
+                                className="flex items-center gap-2 bg-white/15 backdrop-blur-md border border-white/20 rounded-full px-3 py-1.5 text-white text-xs font-semibold hover:bg-white/25 transition-all active:scale-95"
                             >
-                                <X size={24} />
+                                <ShoppingBag size={12} />
+                                <span className="line-clamp-1 max-w-[120px]">{reel.productId?.name || 'View Product'}</span>
+                                {reel.productId?.price && <span className="text-purple-300">₹{reel.productId.price}</span>}
                             </button>
-                        </div>
-                        {/* Comments List */}
-                        <div className="flex-1 overflow-y-auto p-6 space-y-6 no-scrollbar">
-                            {[1,2,3,4,5,6].map((i) => (
-                                <div key={i} className="flex gap-3">
-                                    <div className="h-9 w-9 rounded-full bg-neutral-800 flex-shrink-0">
-                                        <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=user${i}`} alt="user" className="h-full w-full rounded-full" />
-                                    </div>
-                                    <div className="flex flex-col gap-1">
-                                        <div className="flex items-center gap-2">
-                                            <span className="text-white font-bold text-xs">user_{i}</span>
-                                            <span className="text-white/40 text-[10px]">2h</span>
-                                        </div>
-                                        <p className="text-white/90 text-sm leading-relaxed">This looks absolutely amazing! Where can I find more? 🔥</p>
-                                        <button className="text-white/40 text-[10px] font-bold mt-1">Reply</button>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                        {/* Input Area */}
-                        <div className="p-4 border-t border-white/10 bg-neutral-900 pb-8">
-                            <div className="flex items-center gap-3 bg-neutral-800 rounded-full px-4 py-2 border border-white/5 shadow-inner">
-                                <input 
-                                    placeholder="Add a comment..." 
-                                    className="flex-1 bg-transparent text-white text-sm outline-none placeholder:text-white/30"
-                                />
-                                <button className="text-blue-400 font-bold text-sm px-2">Post</button>
-                            </div>
-                        </div>
+                        )}
+                        {/* Additional tagged products */}
+                        {reel.taggedProducts?.slice(0, 2).map((tp) => (
+                            <button key={tp.productId?._id || tp.productId}
+                                onClick={() => handleViewProduct(tp.productId?._id || tp.productId)}
+                                className="flex items-center gap-1 bg-white/10 backdrop-blur border border-white/15 rounded-full px-2.5 py-1 text-white text-[11px] font-medium hover:bg-white/20 transition-all"
+                            >
+                                <ShoppingBag size={10} />
+                                <span className="line-clamp-1 max-w-[80px]">{tp.label || 'Product'}</span>
+                            </button>
+                        ))}
                     </div>
-                </div>
+                )}
+            </div>
+
+            {/* Comments Sheet */}
+            {showComments && (
+                <CommentSection reelId={reelId} onClose={() => setShowComments(false)} />
             )}
+
+            <style>{`
+                .no-scrollbar::-webkit-scrollbar { display: none; }
+                .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+                @keyframes spin-slow { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+                .animate-spin-slow { animation: spin-slow 4s linear infinite; }
+            `}</style>
         </div>
     );
 };

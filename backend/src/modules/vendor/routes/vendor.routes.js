@@ -16,6 +16,7 @@ import * as supportController from '../controllers/support.controller.js';
 import * as brandController from '../controllers/brand.controller.js';
 import * as categoryController from '../controllers/category.controller.js';
 import * as storefrontController from '../controllers/storefront.controller.js';
+import * as collabController from '../controllers/vendor.collaboration.controller.js';
 import { authenticate } from '../../../middlewares/authenticate.js';
 import { authorize, enforceAccountStatus } from '../../../middlewares/authorize.js';
 import { authLimiter, otpLimiter, otpVerifyLimiter } from '../../../middlewares/rateLimiter.js';
@@ -172,5 +173,11 @@ router.get('/store/inquiries', ...vendorAuth, storefrontController.getVendorInqu
 router.get('/store/inquiries/:id', ...vendorAuth, storefrontController.getVendorInquiryById);
 router.post('/store/inquiries/:id/replies', ...vendorAuth, storefrontController.replyToInquiry);
 router.patch('/store/inquiries/:id/status', ...vendorAuth, storefrontController.updateInquiryStatus);
+
+// Influencer Collaboration & Product Promotion Invitations
+router.get('/influencers/list', ...vendorAuth, collabController.listVerifiedInfluencers);
+router.post('/influencers/invite', ...vendorAuth, collabController.sendPromotionInvitation);
+router.get('/influencers/invitations', ...vendorAuth, collabController.listVendorInvitations);
+router.patch('/influencers/requests/:id/respond', ...vendorAuth, collabController.respondToInfluencerRequest);
 
 export default router;
