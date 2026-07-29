@@ -30,7 +30,7 @@
         "children": []
     },
     {
-        "title": "Influencer Wallet",
+        "title": "Commission Escrow",
         "route": "/vendor/influencer-wallet",
         "children": []
     },
