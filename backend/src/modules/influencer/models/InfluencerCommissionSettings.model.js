@@ -28,13 +28,33 @@ const influencerCommissionSettingsSchema = new mongoose.Schema(
             min: 0,
             max: 100,
         },
+        returnWindowDays: {
+            type: Number,
+            default: 7,
+            min: 1,
+            max: 60,
+        },
+        minWithdrawalAmount: {
+            type: Number,
+            default: 100,
+            min: 1,
+        },
+        autoSettlementEnabled: {
+            type: Boolean,
+            default: true,
+        },
+        settlementFrequency: {
+            type: String,
+            enum: ['hourly', 'daily', 'manual'],
+            default: 'daily',
+        },
         isEnabled: {
             type: Boolean,
             default: true,
         },
         updatedBy: {
             type: mongoose.Schema.Types.ObjectId,
-            ref: 'Admin',
+            ref: 'User',
         },
     },
     { timestamps: true }

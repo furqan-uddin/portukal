@@ -42,13 +42,6 @@ const startServer = async () => {
       console.error("📦 Failed to run brand migration:", err);
     }
 
-    // Seed default homepage sections
-    try {
-      const { seedHomepageSections } = await import("./scripts/seedHomeSections.js");
-      await seedHomepageSections();
-    } catch (err) {
-      console.error("📦 Failed to run homepage sections seeding:", err);
-    }
 
     initAssignmentScheduler();
     

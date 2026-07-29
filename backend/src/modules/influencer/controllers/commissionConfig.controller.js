@@ -13,6 +13,10 @@ export const getGlobalCommissionSettings = asyncHandler(async (req, res) => {
             minCommissionPercent: 2,
             maxCommissionPercent: 20,
             defaultCommissionPercent: 5,
+            returnWindowDays: 7,
+            minWithdrawalAmount: 100,
+            autoSettlementEnabled: true,
+            settlementFrequency: 'daily',
             isEnabled: true,
         });
     }
@@ -22,7 +26,16 @@ export const getGlobalCommissionSettings = asyncHandler(async (req, res) => {
 
 // PUT /api/influencer/commission-settings/global (Admin Only)
 export const updateGlobalCommissionSettings = asyncHandler(async (req, res) => {
-    const { minCommissionPercent, maxCommissionPercent, defaultCommissionPercent, isEnabled } = req.body;
+    const {
+        minCommissionPercent,
+        maxCommissionPercent,
+        defaultCommissionPercent,
+        returnWindowDays,
+        minWithdrawalAmount,
+        autoSettlementEnabled,
+        settlementFrequency,
+        isEnabled,
+    } = req.body;
 
     if (minCommissionPercent < 0 || maxCommissionPercent > 100 || minCommissionPercent > maxCommissionPercent) {
         throw new ApiError(400, 'Invalid minimum or maximum commission percentage range.');
@@ -45,6 +58,10 @@ export const updateGlobalCommissionSettings = asyncHandler(async (req, res) => {
                 minCommissionPercent: Number(minCommissionPercent),
                 maxCommissionPercent: Number(maxCommissionPercent),
                 defaultCommissionPercent: Number(defaultCommissionPercent),
+                returnWindowDays: returnWindowDays !== undefined ? Number(returnWindowDays) : 7,
+                minWithdrawalAmount: minWithdrawalAmount !== undefined ? Number(minWithdrawalAmount) : 100,
+                autoSettlementEnabled: autoSettlementEnabled !== undefined ? Boolean(autoSettlementEnabled) : true,
+                settlementFrequency: settlementFrequency || 'daily',
                 isEnabled: isEnabled !== undefined ? Boolean(isEnabled) : true,
                 updatedBy: req.user.id,
             },

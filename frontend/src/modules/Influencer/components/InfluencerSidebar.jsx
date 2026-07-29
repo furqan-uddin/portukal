@@ -22,14 +22,13 @@ const InfluencerSidebar = () => {
     const isApproved = influencer?.status === 'approved' && influencer?.isActive !== false;
 
     const navItems = [
-        { title: 'Dashboard', route: '/influence/dashboard', icon: FiHome, requiresApproval: false },
-        { title: 'Marketplace', route: '/influence/marketplace', icon: FiShoppingBag, requiresApproval: true },
-        { title: 'My Affiliate Links', route: '/influence/affiliate-links', icon: FiLink, requiresApproval: true },
-        { title: 'Profile', route: '/influence/profile', icon: FiUser, requiresApproval: false },
-        { title: 'Support', route: '/influence/support', icon: FiHelpCircle, requiresApproval: false },
-        { title: 'Wallet', route: '#', icon: FiDollarSign, isComingSoon: true },
+        { title: 'Dashboard', route: '/influencer/dashboard', icon: FiHome, requiresApproval: false },
+        { title: 'Marketplace', route: '/influencer/marketplace', icon: FiShoppingBag, requiresApproval: true },
+        { title: 'My Affiliate Links', route: '/influencer/affiliate-links', icon: FiLink, requiresApproval: true },
+        { title: 'Wallet & Withdrawals', route: '/influencer/wallet', icon: FiDollarSign, requiresApproval: true },
+        { title: 'Profile', route: '/influencer/profile', icon: FiUser, requiresApproval: false },
+        { title: 'Support', route: '/influencer/support', icon: FiHelpCircle, requiresApproval: false },
         { title: 'Analytics', route: '#', icon: FiBarChart2, isComingSoon: true },
-        { title: 'Withdrawals', route: '#', icon: FiDollarSign, isComingSoon: true },
     ];
 
     const handleNavigation = (item) => {

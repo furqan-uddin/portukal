@@ -77,6 +77,7 @@ const getChildRoute = (parentRoute, childName) => {
     "/admin/influencers": {
       "Manage Influencers": "/admin/influencers",
       "Pending Applications": "/admin/influencers?status=pending",
+      "Withdrawal Requests": "/admin/influencers/withdrawals",
     },
     "/admin/delivery": {
       "Delivery Boys": "/admin/delivery/delivery-boys",

@@ -37,7 +37,7 @@ const LoginForm = ({ initialEmail = '', onSwitchToRegister, onOpenForgotPassword
         try {
             await login(email.trim(), password, rememberMe);
             toast.success('Login successful! Redirecting to portal...');
-            navigate('/influence/dashboard');
+            navigate('/influencer/dashboard');
         } catch (err) {
             const msg = err?.response?.data?.message || err?.message || 'Invalid email or password.';
             setErrorMsg(msg);

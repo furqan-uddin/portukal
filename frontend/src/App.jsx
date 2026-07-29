@@ -213,7 +213,10 @@ import InfluencerLayout from "./modules/Influencer/components/InfluencerLayout";
 import InfluencerMarketplace from "./modules/Influencer/pages/Marketplace";
 import InfluencerMarketplaceProductDetail from "./modules/Influencer/pages/MarketplaceProductDetail";
 import InfluencerAffiliateLinks from "./modules/Influencer/pages/AffiliateLinks";
+import InfluencerWalletDashboard from "./modules/Influencer/pages/WalletDashboard";
 import VendorInfluencerSettings from "./modules/Vendor/pages/VendorInfluencerSettings";
+import VendorInfluencerWallet from "./modules/Vendor/pages/VendorInfluencerWallet";
+import AdminWithdrawals from "./modules/Admin/pages/AdminWithdrawals";
 
 // Inner component that has access to useLocation
 const AppRoutes = () => {
@@ -682,6 +685,7 @@ const AppRoutes = () => {
         <Route path="customers/transactions" element={<Transactions />} />
         <Route path="customers/:id" element={<CustomerDetailPage />} />
         <Route path="influencers" element={<AdminInfluencers />} />
+        <Route path="influencers/withdrawals" element={<AdminWithdrawals />} />
         
         {/* Social Control Routes */}
         <Route path="reels" element={<ReelModeration />} />
@@ -872,12 +876,13 @@ const AppRoutes = () => {
         <Route path="store-builder" element={<VendorStoreManager />} />
         <Route path="marketing/influencer-program" element={<VendorInfluencerSettings />} />
         <Route path="influencer-settings" element={<VendorInfluencerSettings />} />
+        <Route path="influencer-wallet" element={<VendorInfluencerWallet />} />
       </Route>
 
       {/* Influencer Routes */}
-      <Route path="/influence" element={<InfluencerAuthPage />} />
+      <Route path="/influencer" element={<InfluencerAuthPage />} />
       <Route
-        path="/influence/*"
+        path="/influencer/*"
         element={
           <InfluencerProtectedRoute>
             <ErrorBoundary>
@@ -890,6 +895,7 @@ const AppRoutes = () => {
         <Route path="marketplace" element={<InfluencerMarketplace />} />
         <Route path="product/:slug" element={<InfluencerMarketplaceProductDetail />} />
         <Route path="affiliate-links" element={<InfluencerAffiliateLinks />} />
+        <Route path="wallet" element={<InfluencerWalletDashboard />} />
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />

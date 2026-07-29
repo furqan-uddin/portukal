@@ -18,6 +18,10 @@ import influencerMarketplaceRoutes from './modules/influencer/routes/influencerM
 import affiliateLinkRoutes from './modules/influencer/routes/affiliateLink.routes.js';
 import referralRoutes from './modules/influencer/routes/referral.routes.js';
 import commissionConfigRoutes from './modules/influencer/routes/commissionConfig.routes.js';
+import influencerWalletRoutes from './modules/influencer/routes/influencerWallet.routes.js';
+import vendorWalletRoutes from './modules/vendor/routes/vendorWallet.routes.js';
+import adminWithdrawalRoutes from './modules/admin/routes/adminWithdrawal.routes.js';
+import { startSettlementWorker } from './modules/influencer/services/SettlementWorker.js';
 import webhookRouter from './modules/user/routes/webhook.routes.js';
 import paymentRouter from './modules/user/routes/payment.routes.js';
 
@@ -124,7 +128,13 @@ app.use('/api/influencer', influencerRoutes);          // Influencer: auth, prof
 app.use('/api/influencer', influencerMarketplaceRoutes);
 app.use('/api/influencer/affiliate-links', affiliateLinkRoutes);
 app.use('/api/influencer/commission-settings', commissionConfigRoutes);
+app.use('/api/influencer/wallet', influencerWalletRoutes);
+app.use('/api/vendor/influencer-wallet', vendorWalletRoutes);
+app.use('/api/admin/withdrawals', adminWithdrawalRoutes);
 app.use('/api/referrals', referralRoutes);
+
+// Start Background Settlement Worker (Runs every 1 hour)
+startSettlementWorker(60 * 60 * 1000);
 
 // ─── Error Handling ──────────────────────────────────────────────────────────
 app.use(notFound);

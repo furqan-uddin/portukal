@@ -31,7 +31,7 @@ const InfluencerProtectedRoute = ({ children }) => {
     }, [isAuthenticated, isExpired, role, accessToken, logout]);
 
     if (!isAuthenticated || !accessToken || isExpired || (role && accessToken && role !== 'influencer')) {
-        return <Navigate to="/influence" state={{ from: location }} replace />;
+        return <Navigate to="/influencer" state={{ from: location }} replace />;
     }
 
     return children;

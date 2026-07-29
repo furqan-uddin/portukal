@@ -83,6 +83,9 @@ const Influencers = () => {
     const [minComm, setMinComm] = useState(2);
     const [maxComm, setMaxComm] = useState(20);
     const [defaultComm, setDefaultComm] = useState(5);
+    const [returnWindowDays, setReturnWindowDays] = useState(7);
+    const [minWithdrawalAmount, setMinWithdrawalAmount] = useState(100);
+    const [autoSettlementEnabled, setAutoSettlementEnabled] = useState(true);
     const [commEnabled, setCommEnabled] = useState(true);
     const [savingComm, setSavingComm] = useState(false);
 
@@ -94,6 +97,9 @@ const Influencers = () => {
                 setMinComm(data.minCommissionPercent || 2);
                 setMaxComm(data.maxCommissionPercent || 20);
                 setDefaultComm(data.defaultCommissionPercent || 5);
+                setReturnWindowDays(data.returnWindowDays || 7);
+                setMinWithdrawalAmount(data.minWithdrawalAmount || 100);
+                setAutoSettlementEnabled(data.autoSettlementEnabled !== false);
                 setCommEnabled(data.isEnabled !== false);
             }
         } catch (err) {
@@ -109,9 +115,12 @@ const Influencers = () => {
                 minCommissionPercent: Number(minComm),
                 maxCommissionPercent: Number(maxComm),
                 defaultCommissionPercent: Number(defaultComm),
+                returnWindowDays: Number(returnWindowDays),
+                minWithdrawalAmount: Number(minWithdrawalAmount),
+                autoSettlementEnabled: Boolean(autoSettlementEnabled),
                 isEnabled: commEnabled,
             });
-            toast.success('Admin commission bounds updated successfully!');
+            toast.success('Admin commission and financial parameters updated successfully!');
             setIsCommSettingsModalOpen(false);
         } catch (err) {
             toast.error(err?.response?.data?.message || 'Failed to update settings.');
@@ -953,6 +962,40 @@ const Influencers = () => {
                                     value={defaultComm}
                                     onChange={(e) => setDefaultComm(e.target.value)}
                                     className="w-full p-2.5 rounded-xl border border-slate-200 text-sm font-bold bg-slate-50"
+                                />
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label className="font-bold text-slate-700 block mb-1">Return Window (Days)</label>
+                                    <input
+                                        type="number"
+                                        min="1"
+                                        max="60"
+                                        value={returnWindowDays}
+                                        onChange={(e) => setReturnWindowDays(e.target.value)}
+                                        className="w-full p-2.5 rounded-xl border border-slate-200 text-sm font-bold bg-slate-50"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="font-bold text-slate-700 block mb-1">Min Withdrawal (₹)</label>
+                                    <input
+                                        type="number"
+                                        min="1"
+                                        value={minWithdrawalAmount}
+                                        onChange={(e) => setMinWithdrawalAmount(e.target.value)}
+                                        className="w-full p-2.5 rounded-xl border border-slate-200 text-sm font-bold bg-slate-50"
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-200">
+                                <span className="font-bold text-slate-800">Enable Auto Settlement Engine</span>
+                                <input
+                                    type="checkbox"
+                                    checked={autoSettlementEnabled}
+                                    onChange={(e) => setAutoSettlementEnabled(e.target.checked)}
+                                    className="w-4 h-4 rounded text-purple-600 focus:ring-purple-500"
                                 />
                             </div>
 

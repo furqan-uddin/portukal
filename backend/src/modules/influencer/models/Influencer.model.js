@@ -95,6 +95,10 @@ const influencerSchema = new mongoose.Schema(
             default: 'pending',
             index: true,
         },
+        isActive: {
+            type: Boolean,
+            default: true,
+        },
         rejectionReason: {
             type: String,
             default: '',

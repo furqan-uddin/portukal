@@ -30,7 +30,7 @@ const AuthPage = () => {
 
     useEffect(() => {
         if (isAuthenticated) {
-            navigate('/influence/dashboard', { replace: true });
+            navigate('/influencer/dashboard', { replace: true });
         }
     }, [isAuthenticated, navigate]);
 

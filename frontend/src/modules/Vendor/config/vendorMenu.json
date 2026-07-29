@@ -26,7 +26,12 @@
     },
     {
         "title": "Affiliate Program",
-        "route": "/vendor/affiliate",
+        "route": "/vendor/marketing/influencer-program",
+        "children": []
+    },
+    {
+        "title": "Influencer Wallet",
+        "route": "/vendor/influencer-wallet",
         "children": []
     },
 

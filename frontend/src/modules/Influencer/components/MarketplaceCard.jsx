@@ -66,7 +66,7 @@ const MarketplaceCard = ({ product, onGenerateLink }) => {
                 {/* Actions Bar */}
                 <div className="grid grid-cols-2 gap-2 pt-2">
                     <button
-                        onClick={() => navigate(`/influence/product/${product.slug}`)}
+                        onClick={() => navigate(`/influencer/product/${product.slug}`)}
                         className="w-full py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs flex items-center justify-center gap-1 transition-colors"
                     >
                         <FiEye className="w-3.5 h-3.5" /> Details

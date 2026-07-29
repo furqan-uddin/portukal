@@ -34,7 +34,7 @@ const MarketplaceProductDetail = () => {
             setSelectedImage(data.product?.image || (data.product?.images && data.product?.images[0]) || '');
         } catch (err) {
             toast.error(err?.response?.data?.message || 'Failed to fetch product details.');
-            navigate('/influence/marketplace');
+            navigate('/influencer/marketplace');
         } finally {
             setLoading(false);
         }

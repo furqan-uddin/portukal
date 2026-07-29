@@ -36,7 +36,7 @@ export const influencerAuthenticate = asyncHandler(async (req, res, next) => {
 });
 
 export const enforceApprovedInfluencer = (req, res, next) => {
-    if (!req.influencer || req.influencer.status !== 'approved' || !req.influencer.isActive) {
+    if (!req.influencer || req.influencer.status !== 'approved' || req.influencer.isActive === false) {
         throw new ApiError(403, 'Access denied. Only approved and active influencers can access this feature.');
     }
     next();

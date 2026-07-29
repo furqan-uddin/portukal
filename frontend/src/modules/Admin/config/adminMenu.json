@@ -57,7 +57,8 @@
     "route": "/admin/influencers",
     "children": [
       "Manage Influencers",
-      "Pending Applications"
+      "Pending Applications",
+      "Withdrawal Requests"
     ]
   },
   {

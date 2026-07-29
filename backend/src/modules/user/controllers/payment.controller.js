@@ -28,6 +28,7 @@ import { calculateOrderFinancials } from '../../../services/financial.service.js
 import { calculateVendorShippingForGroups } from '../../../services/vendorShipping.service.js';
 import { generateOrderId } from '../../../utils/generateOrderId.js';
 import { generateTrackingNumber } from '../../../utils/generateTrackingNumber.js';
+import { CommissionEngineService } from '../../influencer/services/CommissionEngineService.js';
 
 // ─── POST /api/user/payment/initialize ────────────────────────────────────────
 // Creates DB order (payment_pending) + Razorpay order. No stock deducted yet.
@@ -420,6 +421,10 @@ export const initializePayment = asyncHandler(async (req, res) => {
                         { $set: { usedForOrder: true, orderId: order._id } },
                         { session }
                     );
+                }
+                // Reserve Influencer Commission if referral code is present
+                if (order.influencerId || order.referralCode) {
+                    await CommissionEngineService.reserveCommission(order, session);
                 }
             });
         } finally {
