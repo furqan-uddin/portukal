@@ -31,6 +31,10 @@ import { startSettlementWorker } from './modules/influencer/services/SettlementW
 import { ReportService } from './modules/influencer/services/ReportService.js';
 import webhookRouter from './modules/user/routes/webhook.routes.js';
 import paymentRouter from './modules/user/routes/payment.routes.js';
+import vendorReelRoutes from './modules/reels/routes/vendor.reel.routes.js';
+import adminReelRoutes from './modules/reels/routes/admin.reel.routes.js';
+import influencerReelRoutes from './modules/reels/routes/influencer.reel.routes.js';
+import userReelRoutes from './modules/reels/routes/user.reel.routes.js';
 
 // Middleware imports
 import { apiLimiter } from './middlewares/rateLimiter.js';
@@ -145,6 +149,12 @@ app.use('/api/reports', reportsRoutes);
 app.use('/api/admin/influencer/fraud', fraudRoutes);
 app.use('/api/admin/audit', auditRoutes);
 app.use('/api/admin/system', systemHealthRoutes);
+
+// ─── Shoppable Reels ─────────────────────────────────────────────────────────
+app.use('/api/vendor/reels', vendorReelRoutes);        // Vendor: upload, manage, schedule, version
+app.use('/api/admin/reels', adminReelRoutes);           // Admin: moderate, feature, analytics
+app.use('/api/influencer/reels', influencerReelRoutes); // Influencer: browse, affiliate link
+app.use('/api/reels', userReelRoutes);                  // User: feed, interactions, comments
 
 // Start Background Settlement Worker (Runs every 1 hour)
 startSettlementWorker(60 * 60 * 1000);

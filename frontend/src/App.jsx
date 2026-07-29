@@ -224,6 +224,15 @@ import AuditDashboard from "./modules/Admin/pages/AuditDashboard";
 import SystemOperationsDashboard from "./modules/Admin/pages/SystemOperationsDashboard";
 import InfluencerAnalytics from "./modules/Influencer/pages/InfluencerAnalytics";
 import InfluencerSupport from "./modules/Influencer/pages/InfluencerSupport";
+import InfluencerProfile from "./modules/Influencer/pages/InfluencerProfile";
+
+// Shoppable Reels
+import VendorReelsList from "./modules/Vendor/pages/reels/VendorReelsList";
+import VendorReelUpload from "./modules/Vendor/pages/reels/VendorReelUpload";
+import VendorReelAnalytics from "./modules/Vendor/pages/reels/VendorReelAnalytics";
+import VendorInfluencerInvite from "./modules/Vendor/pages/VendorInfluencerInvite";
+import AdminReelModeration from "./modules/Admin/pages/reels/AdminReelModeration";
+import InfluencerReelsMarketplace from "./modules/Influencer/pages/ReelsMarketplace";
 
 // Inner component that has access to useLocation
 const AppRoutes = () => {
@@ -776,6 +785,9 @@ const AppRoutes = () => {
         <Route path="campaigns" element={<Campaigns />} />
         <Route path="reviews" element={<Reviews />} />
         <Route path="content" element={<Content />} />
+        {/* Admin Reels */}
+        <Route path="reels/moderation" element={<AdminReelModeration />} />
+        <Route path="reels/library" element={<AdminReelModeration />} />
       </Route>
       {/* Delivery Routes */}
       <Route path="/delivery/login" element={<DeliveryLogin />} />
@@ -889,6 +901,13 @@ const AppRoutes = () => {
         <Route path="influencer-settings" element={<VendorInfluencerSettings />} />
         <Route path="influencer-wallet" element={<VendorInfluencerWallet />} />
         <Route path="analytics" element={<VendorInfluencerAnalytics />} />
+        {/* Vendor Reels */}
+        <Route path="reels" element={<VendorReelsList />} />
+        <Route path="reels/upload" element={<VendorReelUpload />} />
+        <Route path="reels/analytics" element={<VendorReelAnalytics />} />
+        <Route path="reels/drafts" element={<VendorReelsList />} />
+        <Route path="reels/:id/analytics" element={<VendorReelAnalytics />} />
+        <Route path="influencers/invite" element={<VendorInfluencerInvite />} />
       </Route>
 
       {/* Influencer Routes */}
@@ -910,6 +929,8 @@ const AppRoutes = () => {
         <Route path="wallet" element={<InfluencerWalletDashboard />} />
         <Route path="analytics" element={<InfluencerAnalytics />} />
         <Route path="support" element={<InfluencerSupport />} />
+        <Route path="profile" element={<InfluencerProfile />} />
+        <Route path="reels" element={<InfluencerReelsMarketplace />} />
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />

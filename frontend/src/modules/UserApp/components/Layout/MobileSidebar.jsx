@@ -111,7 +111,7 @@ const MobileSidebar = ({ isOpen, onClose }) => {
             </div>
 
             {/* Menu Links */}
-            <div className="flex-1 overflow-y-auto py-4">
+            <div className="flex-1 overflow-y-auto scrollbar-hide py-4">
               <div className="px-4 mb-2">
                 <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
                   Main Menu

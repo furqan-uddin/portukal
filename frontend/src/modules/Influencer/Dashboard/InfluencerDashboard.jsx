@@ -12,6 +12,11 @@ import {
     Share2,
     Award,
     Tag,
+    ArrowRight,
+    BarChart2,
+    User,
+    Film,
+    ShoppingBag,
 } from 'lucide-react';
 import { useInfluencerAuth } from '../hooks/useInfluencerAuth';
 import '../styles/influencerAuth.css';
@@ -39,7 +44,7 @@ const InfluencerDashboard = () => {
                     </div>
                     <div>
                         <h1 className="font-extrabold text-lg text-slate-900 leading-tight">Porutkal Influencer Portal</h1>
-                        <p className="text-xs text-purple-600 font-semibold">Creator & Affiliate Marketing</p>
+                        <p className="text-xs text-purple-600 font-semibold">Creator &amp; Affiliate Marketing</p>
                     </div>
                 </div>
 
@@ -80,7 +85,7 @@ const InfluencerDashboard = () => {
                     <div className="relative z-10">
                         <div className="flex items-center gap-2 mb-3">
                             <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-purple-500/20 text-purple-200 text-xs font-bold border border-purple-400/30">
-                                <Award className="w-3.5 h-3.5" /> Phase 1 Portal
+                                <Award className="w-3.5 h-3.5" /> Creator Portal
                             </span>
                             {influencer?.referralCode && (
                                 <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-pink-500/20 text-pink-200 text-xs font-bold border border-pink-400/30">
@@ -92,7 +97,7 @@ const InfluencerDashboard = () => {
                             Welcome back, {influencer?.name || 'Influencer'}! 👋
                         </h2>
                         <p className="text-purple-200 text-sm max-w-xl">
-                            Track your referral metrics, manage affiliate links, and monitor your commission wallet reservations seamlessly.
+                            Track your referral metrics, manage affiliate links, promote shoppable video reels, and monitor your commission payouts seamlessly.
                         </p>
                     </div>
                 </div>
@@ -108,14 +113,8 @@ const InfluencerDashboard = () => {
                             Your application is under review.
                         </h3>
                         <p className="text-slate-600 text-sm leading-relaxed max-w-md mx-auto mb-6">
-                            Thank you for joining the Porutkal Influencer Network! Our team is currently reviewing your profile, social handles, and verification documents. Application review usually takes 24-48 hours.
+                            Thank you for joining the Porutkal Influencer Network! Our team is currently reviewing your profile and verification details. Application review usually takes 24-48 hours.
                         </p>
-                        <div className="p-4 bg-amber-50 border border-amber-200 rounded-2xl text-amber-900 text-xs font-medium text-left max-w-md mx-auto flex items-start gap-3">
-                            <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
-                            <div>
-                                <span className="font-bold">Next Steps:</span> Once approved by our administrators, your storefront handle <span className="font-bold underline text-purple-800">porutkal.com/@{influencer?.slug || 'yourhandle'}</span> and referral code <span className="font-bold text-purple-900 font-mono bg-purple-100 px-1.5 py-0.5 rounded">{influencer?.referralCode || 'INF12345'}</span> will be activated.
-                            </div>
-                        </div>
                     </div>
                 )}
 
@@ -125,40 +124,145 @@ const InfluencerDashboard = () => {
                             <div className="flex items-center gap-3">
                                 <CheckCircle2 className="w-6 h-6 text-emerald-600 shrink-0" />
                                 <div>
-                                    <h4 className="font-bold text-emerald-950">Influencer Dashboard (Currently Coming Soon)</h4>
-                                    <p className="text-xs text-emerald-700">Your account is verified and ready for affiliate program integration.</p>
+                                    <h4 className="font-bold text-emerald-950">Influencer Account Active &amp; Verified</h4>
+                                    <p className="text-xs text-emerald-700">Click any card below to open details and manage your creator tools.</p>
                                 </div>
                             </div>
                             <span className="influencer-status-badge approved m-0">APPROVED</span>
                         </div>
 
-                        {/* Coming Soon Feature Previews */}
+                        {/* Interactive Feature Cards Grid */}
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                            <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-                                <div className="w-10 h-10 rounded-xl bg-purple-100 text-purple-600 flex items-center justify-center mb-4">
-                                    <Wallet className="w-5 h-5" />
+                            {/* Card 1: Commission Wallet */}
+                            <div
+                                onClick={() => navigate('/influencer/wallet')}
+                                className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md hover:border-purple-300 transition-all cursor-pointer group flex flex-col justify-between"
+                            >
+                                <div>
+                                    <div className="w-12 h-12 rounded-2xl bg-purple-100 text-purple-600 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                                        <Wallet className="w-6 h-6" />
+                                    </div>
+                                    <h4 className="font-bold text-slate-900 text-lg mb-1 group-hover:text-purple-600 transition-colors">Commission Wallet</h4>
+                                    <p className="text-xs text-slate-500 mb-4">Reserved directly from Vendor Wallet for guaranteed payout security.</p>
                                 </div>
-                                <h4 className="font-bold text-slate-900 text-lg mb-1">Commission Wallet</h4>
-                                <p className="text-xs text-slate-500 mb-4">Reserved directly from Vendor Wallet for guaranteed payout security.</p>
-                                <span className="text-xs font-bold text-purple-600 bg-purple-50 px-2.5 py-1 rounded-lg">Total Earned: ₹{influencer?.wallet?.totalEarned || '0.00'}</span>
+                                <div className="flex items-center justify-between pt-3 border-t border-slate-100">
+                                    <span className="text-xs font-bold text-purple-700 bg-purple-50 px-2.5 py-1 rounded-lg">
+                                        Total: ₹{influencer?.wallet?.totalEarned || '0.00'}
+                                    </span>
+                                    <span className="text-xs font-bold text-purple-600 flex items-center gap-1 group-hover:translate-x-1 transition-transform">
+                                        View Wallet <ArrowRight className="w-3.5 h-3.5" />
+                                    </span>
+                                </div>
                             </div>
 
-                            <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-                                <div className="w-10 h-10 rounded-xl bg-pink-100 text-pink-600 flex items-center justify-center mb-4">
-                                    <Store className="w-5 h-5" />
+                            {/* Card 2: Shoppable Reels Marketplace */}
+                            <div
+                                onClick={() => navigate('/influencer/reels')}
+                                className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md hover:border-pink-300 transition-all cursor-pointer group flex flex-col justify-between"
+                            >
+                                <div>
+                                    <div className="w-12 h-12 rounded-2xl bg-pink-100 text-pink-600 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                                        <Film className="w-6 h-6" />
+                                    </div>
+                                    <h4 className="font-bold text-slate-900 text-lg mb-1 group-hover:text-pink-600 transition-colors">Shoppable Reels</h4>
+                                    <p className="text-xs text-slate-500 mb-4">Upload promotional video reviews or accept vendor product invitations.</p>
                                 </div>
-                                <h4 className="font-bold text-slate-900 text-lg mb-1">Personal Storefront</h4>
-                                <p className="text-xs text-slate-500 mb-4">Your customized creator storefront for sharing curated product lists.</p>
-                                <span className="text-xs font-bold text-pink-600 bg-pink-50 px-2.5 py-1 rounded-lg">porutkal.com/@{influencer?.slug || 'creator'}</span>
+                                <div className="flex items-center justify-between pt-3 border-t border-slate-100">
+                                    <span className="text-xs font-bold text-pink-700 bg-pink-50 px-2.5 py-1 rounded-lg">
+                                        Reels Portal
+                                    </span>
+                                    <span className="text-xs font-bold text-pink-600 flex items-center gap-1 group-hover:translate-x-1 transition-transform">
+                                        Open Reels <ArrowRight className="w-3.5 h-3.5" />
+                                    </span>
+                                </div>
                             </div>
 
-                            <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-                                <div className="w-10 h-10 rounded-xl bg-indigo-100 text-indigo-600 flex items-center justify-center mb-4">
-                                    <Share2 className="w-5 h-5" />
+                            {/* Card 3: Affiliate Links */}
+                            <div
+                                onClick={() => navigate('/influencer/affiliate-links')}
+                                className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md hover:border-indigo-300 transition-all cursor-pointer group flex flex-col justify-between"
+                            >
+                                <div>
+                                    <div className="w-12 h-12 rounded-2xl bg-indigo-100 text-indigo-600 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                                        <Share2 className="w-6 h-6" />
+                                    </div>
+                                    <h4 className="font-bold text-slate-900 text-lg mb-1 group-hover:text-indigo-600 transition-colors">Affiliate Referral Links</h4>
+                                    <p className="text-xs text-slate-500 mb-4">Your unique referral code for tracking affiliate conversions and link clicks.</p>
                                 </div>
-                                <h4 className="font-bold text-slate-900 text-lg mb-1">Affiliate Referral Code</h4>
-                                <p className="text-xs text-slate-500 mb-4">Your unique referral code for tracking affiliate conversions.</p>
-                                <span className="text-xs font-bold text-indigo-600 bg-indigo-50 px-2.5 py-1 rounded-lg font-mono">{influencer?.referralCode || 'INF12345'}</span>
+                                <div className="flex items-center justify-between pt-3 border-t border-slate-100">
+                                    <span className="text-xs font-bold text-indigo-700 bg-indigo-50 px-2.5 py-1 rounded-lg font-mono">
+                                        {influencer?.referralCode || 'INF12345'}
+                                    </span>
+                                    <span className="text-xs font-bold text-indigo-600 flex items-center gap-1 group-hover:translate-x-1 transition-transform">
+                                        My Links <ArrowRight className="w-3.5 h-3.5" />
+                                    </span>
+                                </div>
+                            </div>
+
+                            {/* Card 4: Products Marketplace */}
+                            <div
+                                onClick={() => navigate('/influencer/marketplace')}
+                                className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md hover:border-emerald-300 transition-all cursor-pointer group flex flex-col justify-between"
+                            >
+                                <div>
+                                    <div className="w-12 h-12 rounded-2xl bg-emerald-100 text-emerald-600 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                                        <ShoppingBag className="w-6 h-6" />
+                                    </div>
+                                    <h4 className="font-bold text-slate-900 text-lg mb-1 group-hover:text-emerald-600 transition-colors">Products Catalog</h4>
+                                    <p className="text-xs text-slate-500 mb-4">Browse high-commission products available for affiliate promotion.</p>
+                                </div>
+                                <div className="flex items-center justify-between pt-3 border-t border-slate-100">
+                                    <span className="text-xs font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-lg">
+                                        Marketplace
+                                    </span>
+                                    <span className="text-xs font-bold text-emerald-600 flex items-center gap-1 group-hover:translate-x-1 transition-transform">
+                                        Browse Products <ArrowRight className="w-3.5 h-3.5" />
+                                    </span>
+                                </div>
+                            </div>
+
+                            {/* Card 5: Revenue Analytics BI */}
+                            <div
+                                onClick={() => navigate('/influencer/analytics')}
+                                className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md hover:border-amber-300 transition-all cursor-pointer group flex flex-col justify-between"
+                            >
+                                <div>
+                                    <div className="w-12 h-12 rounded-2xl bg-amber-100 text-amber-600 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                                        <BarChart2 className="w-6 h-6" />
+                                    </div>
+                                    <h4 className="font-bold text-slate-900 text-lg mb-1 group-hover:text-amber-600 transition-colors">Analytics BI</h4>
+                                    <p className="text-xs text-slate-500 mb-4">Detailed breakdown of clicks, conversion rates, and geographic reach.</p>
+                                </div>
+                                <div className="flex items-center justify-between pt-3 border-t border-slate-100">
+                                    <span className="text-xs font-bold text-amber-700 bg-amber-50 px-2.5 py-1 rounded-lg">
+                                        Performance Metrics
+                                    </span>
+                                    <span className="text-xs font-bold text-amber-600 flex items-center gap-1 group-hover:translate-x-1 transition-transform">
+                                        View Analytics <ArrowRight className="w-3.5 h-3.5" />
+                                    </span>
+                                </div>
+                            </div>
+
+                            {/* Card 6: Profile & Social Accounts */}
+                            <div
+                                onClick={() => navigate('/influencer/profile')}
+                                className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md hover:border-blue-300 transition-all cursor-pointer group flex flex-col justify-between"
+                            >
+                                <div>
+                                    <div className="w-12 h-12 rounded-2xl bg-blue-100 text-blue-600 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                                        <User className="w-6 h-6" />
+                                    </div>
+                                    <h4 className="font-bold text-slate-900 text-lg mb-1 group-hover:text-blue-600 transition-colors">Profile &amp; Bank Details</h4>
+                                    <p className="text-xs text-slate-500 mb-4">Update social media handles, bank account info, and creator bio.</p>
+                                </div>
+                                <div className="flex items-center justify-between pt-3 border-t border-slate-100">
+                                    <span className="text-xs font-bold text-blue-700 bg-blue-50 px-2.5 py-1 rounded-lg">
+                                        Account Info
+                                    </span>
+                                    <span className="text-xs font-bold text-blue-600 flex items-center gap-1 group-hover:translate-x-1 transition-transform">
+                                        Edit Profile <ArrowRight className="w-3.5 h-3.5" />
+                                    </span>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -175,22 +279,6 @@ const InfluencerDashboard = () => {
                         </h3>
                         <p className="text-slate-600 text-sm max-w-md mx-auto mb-4">
                             Reason for rejection: <strong className="text-red-700">{influencer?.rejectionReason || 'Profile details did not meet marketplace minimum guidelines.'}</strong>
-                        </p>
-                        <p className="text-xs text-slate-500">Please contact support at support@porutkal.com if you believe this was an error.</p>
-                    </div>
-                )}
-
-                {status === 'suspended' && (
-                    <div className="influencer-dashboard-status-card animate-fade-in">
-                        <div className="influencer-status-badge suspended">
-                            <AlertTriangle className="w-4 h-4" />
-                            <span>Account Suspended</span>
-                        </div>
-                        <h3 className="text-2xl font-bold text-slate-900 mb-3">
-                            Your account has been suspended.
-                        </h3>
-                        <p className="text-slate-600 text-sm max-w-md mx-auto">
-                            Please contact administrator support for account restoration.
                         </p>
                     </div>
                 )}
