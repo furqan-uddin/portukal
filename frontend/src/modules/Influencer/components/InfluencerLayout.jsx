@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Outlet } from 'react-router-dom';
-import { FiMenu, FiSidebar } from 'react-icons/fi';
+import { FiMenu } from 'react-icons/fi';
 import InfluencerSidebar from './InfluencerSidebar';
 import NotificationBell from './notifications/NotificationBell';
 
@@ -19,8 +19,10 @@ const InfluencerLayout = () => {
     return (
         <div className="min-h-screen bg-slate-50 text-slate-900 font-sans flex relative overflow-x-hidden">
             <InfluencerSidebar isOpen={sidebarOpen} setIsOpen={setSidebarOpen} isCollapsed={isCollapsed} />
-            <main className={`flex-1 overflow-y-auto h-screen flex flex-col min-w-0 transition-all duration-300 ${isCollapsed ? 'md:ml-0' : 'md:ml-64'}`}>
-                <header className="h-16 bg-white border-b border-slate-200 px-4 md:px-6 flex items-center justify-between sticky top-0 z-30 shadow-xs">
+            
+            <div className={`flex-1 flex flex-col min-w-0 max-w-full transition-all duration-300 ${isCollapsed ? 'md:ml-0' : 'md:ml-64'}`}>
+                {/* Fixed Header */}
+                <header className={`bg-white/90 backdrop-blur-md border-b border-slate-200/80 fixed top-0 right-0 z-30 transition-all duration-300 shadow-sm flex items-center justify-between px-4 lg:px-6 h-16 ${isCollapsed ? 'left-0' : 'left-0 md:left-64'}`}>
                     <div className="flex items-center gap-3">
                         <button 
                             className="p-2 -ml-2 text-slate-500 hover:bg-slate-100 rounded-lg transition-colors"
@@ -39,10 +41,12 @@ const InfluencerLayout = () => {
                     </div>
                     <NotificationBell />
                 </header>
-                <div className="flex-1 p-2 md:p-4">
+                
+                {/* Scrollable Page Content */}
+                <main className="flex-1 p-2 md:p-4 mt-16 w-full min-w-0">
                     <Outlet />
-                </div>
-            </main>
+                </main>
+            </div>
         </div>
     );
 };
