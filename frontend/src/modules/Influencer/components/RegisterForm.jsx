@@ -367,10 +367,11 @@ const RegisterForm = ({ onSwitchToLogin, onRequireEmailVerification }) => {
                                 <input
                                     type="email"
                                     name="email"
-                                    className={`influencer-form-input ${fieldErrors.email ? 'error' : ''}`}
+                                    className={`influencer-form-input ${fieldErrors.email ? 'error' : ''} ${isUserLoggedIn ? 'bg-slate-100 cursor-not-allowed text-slate-500' : ''}`}
                                     placeholder="rahul@example.com"
                                     value={formData.email}
                                     onChange={handleChange}
+                                    disabled={isUserLoggedIn}
                                     required
                                 />
                                 <Mail className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
@@ -398,55 +399,57 @@ const RegisterForm = ({ onSwitchToLogin, onRequireEmailVerification }) => {
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div className="influencer-form-group">
-                            <label className="influencer-form-label">Password *</label>
-                            <div className="influencer-input-wrapper">
-                                <input
-                                    type={showPassword ? 'text' : 'password'}
-                                    name="password"
-                                    className={`influencer-form-input ${fieldErrors.password ? 'error' : ''}`}
-                                    placeholder="Min 8 chars"
-                                    value={formData.password}
-                                    onChange={handleChange}
-                                    required
-                                />
-                                <button
-                                    type="button"
-                                    className="influencer-toggle-pwd"
-                                    onClick={() => setShowPassword(!showPassword)}
-                                    tabIndex={-1}
-                                >
-                                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                                </button>
+                    {!isUserLoggedIn && (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div className="influencer-form-group">
+                                <label className="influencer-form-label">Password *</label>
+                                <div className="influencer-input-wrapper">
+                                    <input
+                                        type={showPassword ? 'text' : 'password'}
+                                        name="password"
+                                        className={`influencer-form-input ${fieldErrors.password ? 'error' : ''}`}
+                                        placeholder="Min 8 chars"
+                                        value={formData.password}
+                                        onChange={handleChange}
+                                        required
+                                    />
+                                    <button
+                                        type="button"
+                                        className="influencer-toggle-pwd"
+                                        onClick={() => setShowPassword(!showPassword)}
+                                        tabIndex={-1}
+                                    >
+                                        {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                                    </button>
+                                </div>
+                                {fieldErrors.password && (
+                                    <span className="text-xs text-red-500 font-medium mt-1 block">
+                                        {fieldErrors.password}
+                                    </span>
+                                )}
                             </div>
-                            {fieldErrors.password && (
-                                <span className="text-xs text-red-500 font-medium mt-1 block">
-                                    {fieldErrors.password}
-                                </span>
-                            )}
-                        </div>
 
-                        <div className="influencer-form-group">
-                            <label className="influencer-form-label">Confirm Password *</label>
-                            <div className="influencer-input-wrapper">
-                                <input
-                                    type={showPassword ? 'text' : 'password'}
-                                    name="confirmPassword"
-                                    className={`influencer-form-input ${fieldErrors.confirmPassword ? 'error' : ''}`}
-                                    placeholder="Re-enter password"
-                                    value={formData.confirmPassword}
-                                    onChange={handleChange}
-                                    required
-                                />
+                            <div className="influencer-form-group">
+                                <label className="influencer-form-label">Confirm Password *</label>
+                                <div className="influencer-input-wrapper">
+                                    <input
+                                        type={showPassword ? 'text' : 'password'}
+                                        name="confirmPassword"
+                                        className={`influencer-form-input ${fieldErrors.confirmPassword ? 'error' : ''}`}
+                                        placeholder="Re-enter password"
+                                        value={formData.confirmPassword}
+                                        onChange={handleChange}
+                                        required
+                                    />
+                                </div>
+                                {fieldErrors.confirmPassword && (
+                                    <span className="text-xs text-red-500 font-medium mt-1 block">
+                                        {fieldErrors.confirmPassword}
+                                    </span>
+                                )}
                             </div>
-                            {fieldErrors.confirmPassword && (
-                                <span className="text-xs text-red-500 font-medium mt-1 block">
-                                    {fieldErrors.confirmPassword}
-                                </span>
-                            )}
                         </div>
-                    </div>
+                    )}
 
                     <div className="influencer-form-group">
                         <label className="influencer-form-label">Profile Photo URL (Optional)</label>

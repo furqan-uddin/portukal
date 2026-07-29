@@ -23,6 +23,7 @@ import {
   FiZap,
   FiCreditCard,
   FiMic,
+  FiAward,
 } from "react-icons/fi";
 import { HiOutlineUserCircle } from "react-icons/hi";
 import { useState, useRef, useEffect } from "react";
@@ -330,6 +331,14 @@ const DesktopHeader = ({ onSearch }) => {
                       >
                         <FiShoppingBag className="text-gray-500 text-base" />
                         <span>Orders</span>
+                      </Link>
+                      <Link
+                        to="/influencer"
+                        onClick={() => setShowUserMenu(false)}
+                        className="flex items-center gap-3 px-3 py-2 bg-purple-50 hover:bg-purple-100 rounded-xl transition-colors text-left text-purple-700 text-sm font-bold my-1"
+                      >
+                        <FiAward className="text-purple-600 text-base" />
+                        <span>Influencer Portal</span>
                       </Link>
                       <button
                         onClick={handleLogout}

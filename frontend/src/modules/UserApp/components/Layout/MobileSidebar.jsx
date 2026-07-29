@@ -10,6 +10,7 @@ import {
   FiHeart,
   FiShoppingBag,
   FiCreditCard,
+  FiAward,
 } from "react-icons/fi";
 import { Link } from "react-router-dom";
 import { appLogo } from "../../../../data/logos";
@@ -165,6 +166,14 @@ const MobileSidebar = ({ isOpen, onClose }) => {
                   <FiShoppingBag className="text-xl group-hover:scale-110 transition-transform" />
                   <span className="font-medium text-left">My Cart</span>
                 </button>
+                <Link
+                  to="/influencer"
+                  onClick={onClose}
+                  className="flex items-center gap-4 px-4 py-3 bg-purple-50 text-purple-700 hover:bg-purple-100 rounded-xl transition-all font-semibold my-1"
+                >
+                  <FiAward className="text-xl text-purple-600" />
+                  <span>Become an Influencer</span>
+                </Link>
               </nav>
             </div>
 

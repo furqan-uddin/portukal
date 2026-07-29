@@ -92,6 +92,7 @@ const DesktopFooter = () => {
               { name: "Help Center", path: "/policy/faq" },
               { name: "Frequently Asked Questions", path: "/policy/faq" },
               { name: "Returns & Refund Policy", path: "/policy/refund-policy" },
+              { name: "Become an Influencer", path: "/influencer" },
             ].map((link, idx) => (
               <li key={idx}>
                 <Link
