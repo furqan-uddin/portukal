@@ -74,44 +74,6 @@ const MobileProfile = () => {
     { label: 'Support Tickets', icon: FiMessageCircle, color: 'text-teal-600', bg: 'bg-teal-50', action: () => { navigate('/support'); setShowMenu(false); } },
   ];
 
-  const highlights = [
-    { label: 'Orders', icon: FiPackage, color: 'text-orange-600', bg: 'bg-orange-50', action: () => navigate('/orders') },
-    { label: 'Wishlist', icon: FiBell, color: 'text-pink-600', bg: 'bg-pink-50', action: () => navigate('/wishlist') },
-    { label: 'Addresses', icon: FiMapPin, color: 'text-green-600', bg: 'bg-green-50', action: () => navigate('/addresses') },
-  ];
-
-  const renderContent = () => {
-    if (activeTab === 'grid') return (
-      <div className="grid grid-cols-3 gap-0.5">
-        {[1,2,3,4,5,6,7,8,9].map((i) => (
-          <div key={i} className="aspect-square bg-gray-100 relative overflow-hidden">
-            <img src={`https://picsum.photos/seed/${i + 20}/300/300`} alt="post" className="h-full w-full object-cover" />
-          </div>
-        ))}
-      </div>
-    );
-    if (activeTab === 'reels') return (
-      <div className="grid grid-cols-3 gap-0.5">
-        {[1,2,3,4,5,6].map((i) => (
-          <div key={i} className="aspect-[9/16] bg-gray-100 relative overflow-hidden">
-            <div className="absolute bottom-2 left-2 flex items-center gap-1 text-white text-[10px] font-bold z-10">
-              <Clapperboard size={12} /> 12.4K
-            </div>
-            <img src={`https://picsum.photos/seed/reel-${i + 30}/300/533`} alt="reel" className="h-full w-full object-cover" />
-          </div>
-        ))}
-      </div>
-    );
-    if (activeTab === 'tags') return (
-      <div className="flex flex-col items-center justify-center py-20 px-10 text-center">
-        <div className="h-20 w-20 rounded-full border-2 border-gray-800 flex items-center justify-center mb-4">
-          <UserSquare size={40} />
-        </div>
-        <h3 className="text-xl font-bold mb-2">Photos and videos of you</h3>
-        <p className="text-sm text-gray-500">When people tag you in photos and videos, they'll appear here.</p>
-      </div>
-    );
-  };
 
   return (
     <>
@@ -220,86 +182,76 @@ const MobileProfile = () => {
               </motion.div>
             )}
 
-            {/* Instagram-style Profile View */}
+            {/* Standard E-Commerce Profile View */}
             {!editTab && (
-              <>
-                <div className="px-4 pt-6">
-                  {/* Avatar + Stats */}
-                  <div className="flex items-center gap-8 md:gap-20 mb-4">
-                    <div className="relative flex-shrink-0">
-                      <div className="h-20 w-20 md:h-36 md:w-36 rounded-full bg-emerald-500 flex items-center justify-center text-white text-3xl font-bold overflow-hidden border-2 border-gray-100">
+              <div className="px-4 pt-6 pb-10 space-y-6">
+                {/* Profile Header Card */}
+                <div className="bg-gradient-to-br from-primary-600 to-primary-800 rounded-3xl p-6 text-white shadow-xl shadow-primary-900/20 relative overflow-hidden">
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-2xl -mr-10 -mt-10 pointer-events-none"></div>
+                  <div className="flex items-center gap-5 relative z-10">
+                    <div className="relative">
+                      <div className="h-20 w-20 rounded-full bg-white/20 flex items-center justify-center text-3xl font-bold border-2 border-white/50 backdrop-blur-sm overflow-hidden shadow-inner">
                         {user?.avatar ? <img src={user.avatar} alt={user?.name} className="w-full h-full object-cover" /> : user?.name?.charAt(0).toUpperCase() || 'U'}
                       </div>
-                      <div onClick={() => avatarInputRef.current?.click()} className="absolute bottom-0 right-0 bg-[#7C3AED] rounded-full border-2 border-white p-1 text-white cursor-pointer">
-                        <Plus size={14} strokeWidth={3} />
-                      </div>
+                      <button onClick={() => avatarInputRef.current?.click()} className="absolute bottom-0 right-0 bg-white text-primary-600 rounded-full p-1.5 shadow-lg active:scale-95 transition-transform">
+                        <FiCamera size={14} strokeWidth={3} />
+                      </button>
                     </div>
-                    <div className="flex-1 flex flex-col gap-3">
-                      {/* Desktop name + buttons */}
-                      <div className="hidden md:flex items-center gap-4">
-                        <h2 className="text-xl font-light">{user?.name}</h2>
-                        <button onClick={() => setEditTab('personal')} className="bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 text-white px-4 py-1.5 rounded-xl text-sm font-bold shadow-md shadow-primary-500/20 active:scale-95 transition-all">Edit Profile</button>
-                        <Link to="/support" className="bg-gray-100 px-4 py-1.5 rounded-lg text-sm font-bold">Contact</Link>
-                      </div>
-                      {/* Stats */}
-                      <div className="flex justify-between md:justify-start items-center text-center md:text-left gap-0 md:gap-10">
-                        <div className="flex flex-col md:flex-row md:gap-1">
-                          <div className="font-bold text-lg leading-tight">12</div>
-                          <div className="text-xs md:text-base text-gray-500 md:text-black">Posts</div>
-                        </div>
-                        <div className="flex flex-col md:flex-row md:gap-1">
-                          <div className="font-bold text-lg leading-tight">10.5K</div>
-                          <div className="text-xs md:text-base text-gray-500 md:text-black">Followers</div>
-                        </div>
-                        <div className="flex flex-col md:flex-row md:gap-1">
-                          <div className="font-bold text-lg leading-tight">482</div>
-                          <div className="text-xs md:text-base text-gray-500 md:text-black">Following</div>
-                        </div>
-                      </div>
-                      {/* Desktop Bio */}
-                      <div className="hidden md:block">
-                        <div className="font-bold text-sm mb-0.5">{user?.name}</div>
-                        <div className="text-sm text-gray-600">{user?.email}</div>
-                        {user?.phone && <div className="text-sm text-[#7C3AED]">{user.phone}</div>}
-                      </div>
+                    <div>
+                      <p className="text-primary-100 text-sm font-medium mb-0.5">Welcome back,</p>
+                      <h2 className="text-2xl font-bold tracking-tight mb-1">{user?.name}</h2>
+                      <p className="text-primary-200 text-sm flex items-center gap-1.5"><FiMail size={12} /> {user?.email}</p>
+                      {user?.phone && <p className="text-primary-200 text-sm flex items-center gap-1.5 mt-0.5"><FiPhone size={12} /> {user?.phone}</p>}
                     </div>
                   </div>
+                </div>
 
-                  {/* Mobile Bio */}
-                  <div className="mb-4 md:hidden">
-                    <div className="font-bold text-sm">{user?.name}</div>
-                    <div className="text-sm text-gray-600">{user?.email}</div>
-                    {user?.phone && <div className="text-sm text-[#7C3AED]">{user.phone}</div>}
-                  </div>
+                {/* Quick Stats/Actions Highlights */}
+                <div className="grid grid-cols-3 gap-3">
+                  {[
+                    { label: 'My Orders', icon: FiPackage, color: 'text-orange-600', bg: 'bg-orange-50 border-orange-100', route: '/orders' },
+                    { label: 'My Wallet', icon: FiCreditCard, color: 'text-emerald-600', bg: 'bg-emerald-50 border-emerald-100', route: '/user/wallet' },
+                    { label: 'Wishlist', icon: FiBell, color: 'text-rose-600', bg: 'bg-rose-50 border-rose-100', route: '/wishlist' }
+                  ].map((item, idx) => (
+                    <button key={idx} onClick={() => navigate(item.route)} className={`flex flex-col items-center justify-center gap-2 p-4 rounded-2xl border ${item.bg} hover:shadow-md transition-all active:scale-95`}>
+                      <item.icon className={`text-2xl ${item.color}`} />
+                      <span className="text-xs font-bold text-gray-700">{item.label}</span>
+                    </button>
+                  ))}
+                </div>
 
-                  {/* Mobile Action Buttons */}
-                  <div className="flex md:hidden gap-2 mb-6">
-                    <button onClick={() => setEditTab('personal')} className="flex-1 bg-[#7C3AED] text-white rounded-lg py-1.5 text-sm font-bold">Edit Profile</button>
-                    <Link to="/support" className="flex-1 bg-gray-100 text-black rounded-lg py-1.5 text-sm font-bold text-center">Contact</Link>
-                  </div>
-
-                  {/* Highlights */}
-                  <div className="flex gap-4 overflow-x-auto scrollbar-hide mb-6 py-1">
-                    {highlights.map((h, idx) => (
-                      <div key={idx} onClick={h.action} className="flex flex-col items-center gap-1 min-w-[64px] cursor-pointer">
-                        <div className={`h-16 w-16 rounded-full border-2 border-gray-200 ${h.bg} ${h.color} flex items-center justify-center`}>
-                          <h.icon className="text-xl" />
+                {/* Main Menu List */}
+                <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
+                  <h3 className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider border-b border-gray-50 bg-gray-50/50">Account Settings</h3>
+                  <div className="divide-y divide-gray-50">
+                    {[
+                      { label: 'Edit Personal Info', icon: FiUser, route: null, action: () => setEditTab('personal') },
+                      { label: 'Manage Addresses', icon: FiMapPin, route: '/addresses' },
+                      { label: 'Notifications', icon: FiBell, route: '/notifications', badge: unreadNotificationCount },
+                      { label: 'Change Password', icon: FiLock, route: null, action: () => setEditTab('password') },
+                      { label: 'Support & Help', icon: FiMessageCircle, route: '/support' },
+                    ].map((item, idx) => (
+                      <button key={idx} onClick={item.action ? item.action : () => navigate(item.route)} className="w-full flex items-center justify-between p-4 px-6 hover:bg-gray-50 transition-colors group">
+                        <div className="flex items-center gap-4">
+                          <div className="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center text-gray-500 group-hover:bg-primary-50 group-hover:text-primary-600 transition-colors">
+                            <item.icon className="text-lg" />
+                          </div>
+                          <span className="font-semibold text-gray-700 group-hover:text-gray-900">{item.label}</span>
                         </div>
-                        <span className="text-[10px] font-medium text-gray-700 truncate w-16 text-center">{h.label}</span>
-                      </div>
+                        <div className="flex items-center gap-3">
+                          {item.badge > 0 && <span className="bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">{item.badge}</span>}
+                          <FiChevronRight className="text-gray-300 group-hover:text-primary-500 transition-colors" />
+                        </div>
+                      </button>
                     ))}
                   </div>
                 </div>
 
-                {/* Tabs */}
-                <div className="flex border-t border-gray-200">
-                  <button onClick={() => setActiveTab('grid')} className={`flex-1 flex justify-center py-3 ${activeTab === 'grid' ? 'border-b-2 border-[#7C3AED] text-[#7C3AED]' : 'text-gray-400'}`}><Grid size={24} /></button>
-                  <button onClick={() => setActiveTab('reels')} className={`flex-1 flex justify-center py-3 ${activeTab === 'reels' ? 'border-b-2 border-[#7C3AED] text-[#7C3AED]' : 'text-gray-400'}`}><Clapperboard size={24} /></button>
-                  <button onClick={() => setActiveTab('tags')} className={`flex-1 flex justify-center py-3 ${activeTab === 'tags' ? 'border-b-2 border-[#7C3AED] text-[#7C3AED]' : 'text-gray-400'}`}><UserSquare size={24} /></button>
-                </div>
-
-                <div>{renderContent()}</div>
-              </>
+                {/* Log Out Button */}
+                <button onClick={handleLogout} className="w-full flex items-center justify-center gap-2 py-4 rounded-2xl bg-red-50 text-red-600 font-bold hover:bg-red-100 transition-colors mt-2 active:scale-95">
+                  <FiLogOut className="text-lg" /> Log Out Securely
+                </button>
+              </div>
             )}
           </div>
 
