@@ -165,6 +165,7 @@ const ReelActions = ({ reel, onLike, onShare, onSave, onReport, onComment }) => 
 // ─── ReelCard ────────────────────────────────────────────────────────────────
 const ReelCard = ({ reel, toggleLike, shareReel, saveReel, reportReel, onView, onProductClick }) => {
     const [showComments, setShowComments] = useState(false);
+    const [isFollowing, setIsFollowing] = useState(reel.isFollowing || false);
     const videoRef = useRef(null);
     const navigate = useNavigate();
     const viewTrackedRef = useRef(false);
@@ -216,6 +217,23 @@ const ReelCard = ({ reel, toggleLike, shareReel, saveReel, reportReel, onView, o
         if (slug) navigate(`/product/${slug}`);
     };
 
+    // Resolve profile details
+    const displayName = reel.influencerId?.name || reel.vendorId?.storeName || reel.creatorName || 'Creator';
+    const avatarUrl = reel.influencerId?.profileImage || reel.vendorId?.logoUrl || reel.creatorAvatar || '';
+    const creatorHandle = reel.influencerId?.slug || displayName.toLowerCase().replace(/\s+/g, '_');
+
+    const profileStoreLink = reel.vendorId?.storefrontId?.slug
+        ? `/store/${reel.vendorId.storefrontId.slug}`
+        : reel.vendorId?._id || reel.vendorId?.id
+        ? `/store/${reel.vendorId.slug || (reel.vendorId._id || reel.vendorId.id)}`
+        : `/creator/${creatorHandle}`;
+
+    const handleOpenProfile = () => {
+        if (profileStoreLink && profileStoreLink !== '#') {
+            navigate(profileStoreLink);
+        }
+    };
+
     const vendorName = reel.vendorId?.storeName || reel.creatorName || 'vendor';
     const videoSrc = reel.video?.secureUrl || reel.videoUrl;
 
@@ -245,19 +263,35 @@ const ReelCard = ({ reel, toggleLike, shareReel, saveReel, reportReel, onView, o
                 />
             </div>
 
-            {/* Vendor info + caption */}
+            {/* Vendor/Creator info + caption */}
             <div className="absolute left-4 right-20 bottom-20 z-10 flex flex-col gap-3">
                 <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 rounded-full border border-white/50 overflow-hidden shadow-lg flex-shrink-0 bg-neutral-800">
-                        {reel.vendorId?.logoUrl
-                            ? <img src={reel.vendorId.logoUrl} alt={vendorName} className="w-full h-full object-cover" />
+                    <button 
+                        onClick={handleOpenProfile}
+                        className="h-10 w-10 rounded-full border border-white/50 overflow-hidden shadow-lg flex-shrink-0 bg-neutral-800 cursor-pointer hover:scale-105 transition-all"
+                        title={`View ${vendorName}'s profile`}
+                    >
+                        {reel.vendorId?.logoUrl || reel.influencerId?.profileImage || reel.creatorAvatar
+                            ? <img src={reel.vendorId?.logoUrl || reel.influencerId?.profileImage || reel.creatorAvatar} alt={vendorName} className="w-full h-full object-cover" />
                             : <img src={`https://api.dicebear.com/7.x/shapes/svg?seed=${vendorName}`} alt={vendorName} className="w-full h-full" />
                         }
-                    </div>
+                    </button>
                     <div className="flex items-center gap-3">
-                        <span className="font-bold text-white text-sm drop-shadow-md">{vendorName}</span>
-                        <button className="px-3 py-1 rounded-lg border border-white/40 bg-white/10 backdrop-blur-md text-xs font-bold text-white hover:bg-white/20 transition-all">
-                            Follow
+                        <button 
+                            onClick={handleOpenProfile}
+                            className="font-bold text-white text-sm drop-shadow-md hover:underline cursor-pointer text-left"
+                        >
+                            {vendorName}
+                        </button>
+                        <button 
+                            onClick={() => setIsFollowing(!isFollowing)}
+                            className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${
+                                isFollowing 
+                                    ? 'bg-white/20 text-white border border-white/30' 
+                                    : 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-md'
+                            }`}
+                        >
+                            {isFollowing ? 'Following' : 'Follow'}
                         </button>
                     </div>
                 </div>

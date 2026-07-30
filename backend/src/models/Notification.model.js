@@ -6,12 +6,12 @@ const notificationSchema = new mongoose.Schema(
         recipientType: { type: String, enum: ['user', 'vendor', 'delivery', 'admin', 'influencer'], required: true },
         title: { type: String, required: true },
         message: { type: String, required: true },
-        type: { type: String, enum: ['order', 'payment', 'system', 'promotion', 'store_inquiry', 'support', 'collaboration'], default: 'system' },
+        type: { type: String, default: 'system' },
         isRead: { type: Boolean, default: false, index: true },
         data: { type: Map, of: String }, // extra metadata
     },
     { timestamps: true }
 );
 
-const Notification = mongoose.model('Notification', notificationSchema);
+const Notification = mongoose.models.Notification || mongoose.model('Notification', notificationSchema);
 export default Notification;

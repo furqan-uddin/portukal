@@ -1,4 +1,5 @@
 import asyncHandler from '../../../utils/asyncHandler.js';
+import mongoose from 'mongoose';
 import ApiResponse from '../../../utils/ApiResponse.js';
 import ApiError from '../../../utils/ApiError.js';
 import AffiliateLink from '../models/AffiliateLink.model.js';
@@ -9,7 +10,6 @@ import { getGlobalCommissionSettingsData } from '../services/commissionHelper.js
 // POST /api/influencer/affiliate-links/generate
 export const generateAffiliateLink = asyncHandler(async (req, res) => {
     const { productId } = req.body;
-    const influencerId = req.user.id;
 
     if (!productId) {
         throw new ApiError(400, 'Product ID is required.');
@@ -21,41 +21,55 @@ export const generateAffiliateLink = asyncHandler(async (req, res) => {
         throw new ApiError(403, 'The Influencer Affiliate Program is currently disabled by Admin.');
     }
 
-    const [influencer, product] = await Promise.all([
-        Influencer.findById(influencerId),
-        Product.findById(productId).populate('vendorId', 'storeName status influencerProgram'),
-    ]);
-
-    if (!influencer || influencer.status !== 'approved' || !influencer.isActive) {
-        throw new ApiError(403, 'Only approved and active influencers can generate affiliate links.');
+    // Resolve Influencer Profile
+    let influencer = req.influencer;
+    if (!influencer) {
+        const infId = req.user?.id || req.influencer?._id;
+        influencer = await Influencer.findOne({
+            $or: [
+                { _id: infId },
+                { user: infId },
+                { email: req.user?.email }
+            ]
+        });
     }
 
-    if (!product || !product.isActive || !product.allowInfluencer) {
-        throw new ApiError(400, 'This product is not available for influencer promotion.');
+    if (!influencer) {
+        throw new ApiError(403, 'Only registered influencers can generate affiliate links.');
     }
 
-    if (!product.vendorId || product.vendorId.status !== 'approved' || product.vendorId.influencerProgram?.enabled === false) {
-        throw new ApiError(400, 'The vendor for this product is not active in the influencer program.');
+    if (influencer.status === 'suspended' || influencer.isActive === false) {
+        throw new ApiError(403, 'Your influencer account is suspended or inactive.');
     }
 
+    // Resolve Product by ObjectId or Slug
+    const isObjectId = mongoose.Types.ObjectId.isValid(productId) && /^[a-fA-F0-9]{24}$/.test(productId);
+    const productFilter = isObjectId ? { $or: [{ _id: productId }, { slug: productId }], isActive: true } : { slug: productId, isActive: true };
+
+    const product = await Product.findOne(productFilter).populate('vendorId', 'storeName status influencerProgram');
+
+    if (!product) {
+        throw new ApiError(404, 'Product not found or not active.');
+    }
+
+    const referralCode = influencer.referralCode || `INF-${influencer._id.toString().slice(-6).toUpperCase()}`;
     const baseUrl = process.env.CLIENT_URL || 'http://localhost:3000';
-    const affiliateUrl = `${baseUrl}/product/${product.slug}?ref=${influencer.referralCode}`;
+    const affiliateUrl = `${baseUrl}/product/${product.slug || product._id}?ref=${referralCode}`;
 
     // Deduplication check: One Influencer + One Product = One Link
-    let link = await AffiliateLink.findOne({ influencerId, productId });
+    let link = await AffiliateLink.findOne({ influencerId: influencer._id, productId: product._id });
     if (!link) {
         link = new AffiliateLink({
-            influencerId,
-            vendorId: product.vendorId._id,
+            influencerId: influencer._id,
+            vendorId: product.vendorId?._id || product.vendorId,
             productId: product._id,
-            referralCode: influencer.referralCode,
+            referralCode,
             affiliateUrl,
-            slug: product.slug,
+            slug: product.slug || product._id,
             status: 'active',
         });
         await link.save();
     } else {
-        // If it already exists, return existing link and reactivate if soft-deleted
         link.affiliateUrl = affiliateUrl;
         link.status = 'active';
         await link.save();
@@ -67,17 +81,17 @@ export const generateAffiliateLink = asyncHandler(async (req, res) => {
             {
                 link,
                 affiliateUrl,
-                referralCode: influencer.referralCode,
+                referralCode,
                 productName: product.name,
             },
-            'Affiliate link retrieved successfully.'
+            'Affiliate link generated successfully.'
         )
     );
 });
 
 // GET /api/influencer/affiliate-links
 export const getMyAffiliateLinks = asyncHandler(async (req, res) => {
-    const influencerId = req.user.id;
+    const influencerId = req.influencer?._id || req.user?.id;
     const { page = 1, limit = 20 } = req.query;
 
     const skip = (Number(page) - 1) * Number(limit);
@@ -99,9 +113,7 @@ export const getMyAffiliateLinks = asyncHandler(async (req, res) => {
 
         let computedStatus = link.status;
         if (link.status !== 'deleted') {
-            if (!prod || !prod.isActive || !prod.allowInfluencer || prod.stock === 'out_of_stock') {
-                computedStatus = 'inactive';
-            } else if (!vendor || vendor.status !== 'approved' || vendor.influencerProgram?.enabled === false) {
+            if (!prod || !prod.isActive || prod.stock === 'out_of_stock') {
                 computedStatus = 'inactive';
             }
         }
@@ -132,7 +144,7 @@ export const getMyAffiliateLinks = asyncHandler(async (req, res) => {
 // DELETE /api/influencer/affiliate-links/:id (Soft Delete)
 export const deleteAffiliateLink = asyncHandler(async (req, res) => {
     const { id } = req.params;
-    const influencerId = req.user.id;
+    const influencerId = req.influencer?._id || req.user?.id;
 
     const link = await AffiliateLink.findOne({ _id: id, influencerId });
     if (!link) {

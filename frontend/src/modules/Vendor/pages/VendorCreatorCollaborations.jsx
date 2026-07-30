@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
     FiUsers,
     FiSearch,
@@ -7,6 +8,7 @@ import {
     FiX,
     FiShoppingBag,
     FiPackage,
+    FiGift,
     FiCheckCircle,
     FiClock,
     FiMessageSquare,
@@ -17,6 +19,7 @@ import toast from 'react-hot-toast';
 import { getSocket, joinRoom } from '../../../shared/utils/socket';
 
 const VendorCreatorCollaborations = () => {
+    const navigate = useNavigate();
     const [activeTab, setActiveTab] = useState('all'); // 'all' | 'active' | 'pending' | 'completed' | 'rejected'
     const [collaborations, setCollaborations] = useState([]);
     const [selectedCollab, setSelectedCollab] = useState(null);
@@ -231,7 +234,21 @@ const VendorCreatorCollaborations = () => {
                                             {c.status}
                                         </span>
                                     </div>
-                                    <p className="text-[11px] text-purple-600 font-semibold line-clamp-1">Product: {c.productId?.name || 'Catalog Item'}</p>
+                                    
+                                    {/* Product Mini Banner */}
+                                    <div className="flex items-center gap-2 my-1 bg-white p-1.5 rounded-lg border border-slate-100">
+                                        <img
+                                            src={c.productId?.image || (c.productId?.images && c.productId.images[0]) || 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=100'}
+                                            alt=""
+                                            className="w-7 h-7 rounded-md object-cover border border-slate-200 shrink-0"
+                                            onError={(e) => { e.target.src = 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=100'; }}
+                                        />
+                                        <div className="min-w-0 flex-1">
+                                            <p className="text-[11px] font-bold text-slate-800 truncate">{c.productId?.name || 'Catalog Item'}</p>
+                                            <p className="text-[10px] text-purple-600 font-bold">₹{c.productId?.price?.toLocaleString() || '0'} • {c.offeredCommissionPercent || c.offer?.commissionPercent || 10}% Comm</p>
+                                        </div>
+                                    </div>
+
                                     <p className="text-[10px] text-slate-500 truncate mt-0.5">{c.lastMessage || 'No messages'}</p>
                                 </div>
                             ))
@@ -250,8 +267,51 @@ const VendorCreatorCollaborations = () => {
                                         {selectedCollab.influencerId?.name?.charAt(0) || 'C'}
                                     </div>
                                     <div>
-                                        <h3 className="font-bold text-slate-900 text-sm">{selectedCollab.influencerId?.name} (@{selectedCollab.influencerId?.slug})</h3>
-                                        <p className="text-xs text-purple-600 font-semibold">Offered Commission: {selectedCollab.offer?.commissionPercent || 10}%</p>
+                                        <h3 className="font-bold text-slate-900 text-sm">{selectedCollab.influencerId?.name} (@{selectedCollab.influencerId?.slug || 'creator'})</h3>
+                                        <p className="text-xs text-purple-600 font-semibold">Offered Commission: {selectedCollab.offeredCommissionPercent || selectedCollab.offer?.commissionPercent || 10}%</p>
+                                    </div>
+                                </div>
+
+                                <div className="flex items-center gap-2">
+                                    <span className={`text-xs font-bold px-3 py-1 rounded-full border ${
+                                        selectedCollab.status === 'accepted'
+                                            ? 'bg-emerald-100 text-emerald-800 border-emerald-200'
+                                            : selectedCollab.status === 'rejected'
+                                            ? 'bg-red-100 text-red-800 border-red-200'
+                                            : 'bg-amber-100 text-amber-800 border-amber-200'
+                                    }`}>
+                                        {selectedCollab.status.toUpperCase()}
+                                    </span>
+
+
+                                    <button
+                                        onClick={() => setShowSampleModal(true)}
+                                        className="px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded-xl text-xs font-bold transition-all flex items-center gap-1"
+                                    >
+                                        <FiGift size={14} /> Ship Sample
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* Product Deal Details Banner */}
+                            <div className="p-3.5 bg-purple-50/70 border-b border-purple-100 flex items-center justify-between gap-3 flex-wrap">
+                                <div className="flex items-center gap-3">
+                                    <img
+                                        src={selectedCollab.productId?.image || (selectedCollab.productId?.images && selectedCollab.productId.images[0]) || 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=150'}
+                                        alt="Product"
+                                        className="w-12 h-12 rounded-xl object-cover border border-purple-200 shadow-sm shrink-0"
+                                        onError={(e) => { e.target.src = 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=150'; }}
+                                    />
+                                    <div>
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-[10px] uppercase font-black text-purple-700 bg-purple-200/70 px-2 py-0.5 rounded">Product Deal</span>
+                                            <span className="text-xs font-extrabold text-slate-900">{selectedCollab.productId?.name || 'Catalog Item'}</span>
+                                        </div>
+                                        <div className="flex items-center gap-3 text-xs font-bold text-slate-700 mt-1 flex-wrap">
+                                            <span>Price: <strong className="text-slate-900">₹{selectedCollab.productId?.price?.toLocaleString() || '0'}</strong></span>
+                                            <span>Commission Rate: <strong className="text-purple-600 font-extrabold">{selectedCollab.offeredCommissionPercent || selectedCollab.offer?.commissionPercent || 10}%</strong></span>
+                                            <span className="text-emerald-700 font-bold bg-emerald-100 px-2 py-0.5 rounded-md text-[11px]">Est. Payout / Sale: ₹{Math.round(((selectedCollab.productId?.price || 0) * (selectedCollab.offeredCommissionPercent || selectedCollab.offer?.commissionPercent || 10)) / 100)}</span>
+                                        </div>
                                     </div>
                                 </div>
 
@@ -259,31 +319,49 @@ const VendorCreatorCollaborations = () => {
                                     {selectedCollab.status === 'pending' || selectedCollab.status === 'requested' ? (
                                         <>
                                             <button
+                                                type="button"
                                                 onClick={() => handleStatusUpdate('accepted')}
                                                 disabled={actionLoading === 'accepted'}
-                                                className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-all flex items-center gap-1 shadow-sm"
+                                                className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-all flex items-center gap-1 shadow-sm cursor-pointer"
                                             >
                                                 <FiCheck size={14} /> Approve Deal
                                             </button>
                                             <button
+                                                type="button"
                                                 onClick={() => handleStatusUpdate('rejected')}
                                                 disabled={actionLoading === 'rejected'}
-                                                className="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold transition-all flex items-center gap-1 shadow-sm"
+                                                className="px-3.5 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold transition-all flex items-center gap-1 shadow-sm cursor-pointer"
                                             >
                                                 <FiX size={14} /> Decline
                                             </button>
                                         </>
-                                    ) : (
-                                        <span className="text-xs font-bold bg-emerald-100 text-emerald-800 px-3 py-1 rounded-full border border-emerald-200">
-                                            {selectedCollab.status.toUpperCase()}
-                                        </span>
-                                    )}
+                                    ) : selectedCollab.status === 'accepted' ? (
+                                        <button
+                                            type="button"
+                                            onClick={() => handleStatusUpdate('rejected')}
+                                            disabled={actionLoading === 'rejected'}
+                                            className="px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 rounded-xl text-xs font-bold transition-all flex items-center gap-1 cursor-pointer"
+                                        >
+                                            <FiX size={14} /> Decline / Revoke
+                                        </button>
+                                    ) : null}
 
                                     <button
-                                        onClick={() => setShowSampleModal(true)}
-                                        className="px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded-xl text-xs font-bold transition-all flex items-center gap-1"
+                                        type="button"
+                                        onClick={(e) => {
+                                            e.preventDefault();
+                                            e.stopPropagation();
+                                            const pSlug = selectedCollab.productId?.slug || selectedCollab.productId?._id || selectedCollab.productId?.id;
+                                            if (pSlug) {
+                                                window.open(`/product/${pSlug}`, '_blank');
+                                            } else {
+                                                navigate('/vendor/products/manage-products');
+                                            }
+                                        }}
+                                        className="px-3.5 py-1.5 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 rounded-xl text-xs font-bold transition-all shadow-sm shrink-0 flex items-center gap-1.5 cursor-pointer hover:border-purple-300 relative z-10"
                                     >
-                                        <FiPackage size={14} /> Ship Sample
+                                        <FiShoppingBag size={14} className="text-purple-600" />
+                                        <span>View Product 🛍️</span>
                                     </button>
                                 </div>
                             </div>

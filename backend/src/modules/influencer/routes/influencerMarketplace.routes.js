@@ -8,5 +8,7 @@ const approvedInfluencerAuth = [influencerAuthenticate, enforceApprovedInfluence
 
 router.get('/marketplace', ...approvedInfluencerAuth, marketplaceController.getMarketplaceProducts);
 router.get('/marketplace/product/:slug', ...approvedInfluencerAuth, marketplaceController.getMarketplaceProductBySlug);
+router.get('/deal-requests', ...approvedInfluencerAuth, marketplaceController.getMyDealRequests);
 
 export default router;
+

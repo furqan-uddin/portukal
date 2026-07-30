@@ -1,4 +1,5 @@
 import asyncHandler from '../../../utils/asyncHandler.js';
+import mongoose from 'mongoose';
 import ApiResponse from '../../../utils/ApiResponse.js';
 import ApiError from '../../../utils/ApiError.js';
 import Reel from '../../../models/Reel.model.js';
@@ -7,7 +8,10 @@ import ReelFollow from '../models/ReelFollow.model.js';
 import AffiliateLink from '../../influencer/models/AffiliateLink.model.js';
 import Product from '../../../models/Product.model.js';
 import CollaborationRequest from '../../influencer/models/CollaborationRequest.model.js';
+import InfluencerCollaboration from '../../influencer/models/InfluencerCollaboration.model.js';
+import InfluencerCollaborationMessage from '../../influencer/models/InfluencerCollaborationMessage.model.js';
 import { uploadReelToCloudinary, validateVideoFile } from '../services/cloudinaryReel.service.js';
+import { createNotification } from '../../../services/notification.service.js';
 
 const FRONTEND_URL = process.env.CLIENT_URL || 'http://localhost:3000';
 
@@ -312,26 +316,84 @@ export const sendProductCollaborationRequest = asyncHandler(async (req, res) => 
     const influencerId = req.influencer._id;
     const { productId, message, requestedCommissionPercent } = req.body;
 
-    if (!productId) throw new ApiError(400, 'Product is required.');
+    const isObjectId = mongoose.Types.ObjectId.isValid(productId) && /^[a-fA-F0-9]{24}$/.test(productId);
+    const product = isObjectId 
+        ? await Product.findById(productId, 'name vendorId price') 
+        : await Product.findOne({ slug: productId }, 'name vendorId price');
 
-    const product = await Product.findById(productId, 'name vendorId price');
     if (!product) throw new ApiError(404, 'Product not found.');
 
+    const resolvedProductId = product._id;
+
     // Check for existing pending request
-    const existing = await CollaborationRequest.findOne({ influencerId, productId, status: 'pending' });
+    const existing = await CollaborationRequest.findOne({ influencerId, productId: resolvedProductId, status: 'pending' });
     if (existing) {
         throw new ApiError(400, 'You already have a pending collaboration request for this product.');
     }
 
+    const commPercent = Number(requestedCommissionPercent) || 10;
     const requestDoc = await CollaborationRequest.create({
         influencerId,
         vendorId: product.vendorId,
-        productId,
+        productId: resolvedProductId,
         initiatorModel: 'Influencer',
-        offeredCommissionPercent: Number(requestedCommissionPercent) || 10,
+        offeredCommissionPercent: commPercent,
         message: message?.trim(),
         status: 'pending',
     });
 
-    res.status(201).json(new ApiResponse(201, requestDoc, `Collaboration request for "${product.name}" sent to vendor!`));
+    // Sync InfluencerCollaboration thread document so it shows in Vendor Creator Collaborations Hub
+    let collabThread = await InfluencerCollaboration.findOne({
+        vendorId: product.vendorId,
+        influencerId,
+        productId: resolvedProductId,
+    });
+
+    if (!collabThread) {
+        collabThread = await InfluencerCollaboration.create({
+            vendorId: product.vendorId,
+            influencerId,
+            productId: resolvedProductId,
+            status: 'requested',
+            offeredCommissionPercent: commPercent,
+            offer: { commissionPercent: commPercent },
+            lastMessage: message?.trim() || `Requested deal for ${product.name}`,
+            lastMessageAt: new Date(),
+        });
+    } else {
+        collabThread.status = 'requested';
+        collabThread.offeredCommissionPercent = commPercent;
+        collabThread.offer = { ...collabThread.offer, commissionPercent: commPercent };
+        collabThread.lastMessage = message?.trim() || `Requested deal for ${product.name}`;
+        collabThread.lastMessageAt = new Date();
+        await collabThread.save();
+    }
+
+    if (message?.trim()) {
+        await InfluencerCollaborationMessage.create({
+            collaborationId: collabThread._id,
+            senderId: influencerId,
+            senderModel: 'Influencer',
+            text: message.trim(),
+        });
+    }
+
+    // Send real-time notification to Vendor
+    const influencerName = req.influencer?.name || 'An Influencer';
+    await createNotification({
+        recipientId: product.vendorId,
+        recipientType: 'vendor',
+        title: '🤝 New Deal Request',
+        message: `${influencerName} requested to promote "${product.name}" for ${commPercent}% commission.`,
+        type: 'collaboration_request',
+        data: {
+            requestId: String(requestDoc._id),
+            collabId: String(collabThread._id),
+            productId: String(product._id),
+            influencerId: String(influencerId),
+            module: 'creator-collaborations'
+        }
+    }).catch(err => console.error("Failed to trigger collaboration request notification:", err));
+
+    res.status(201).json(new ApiResponse(201, { requestDoc, collabThread }, `Collaboration request for "${product.name}" sent to vendor!`));
 });

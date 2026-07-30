@@ -3,6 +3,15 @@ import ApiResponse from '../../../utils/ApiResponse.js';
 import ApiError from '../../../utils/ApiError.js';
 import Notification from '../../../models/Notification.model.js';
 
+const getVendorIds = (req) => {
+    const ids = [];
+    if (req.user?.id) ids.push(req.user.id);
+    if (req.user?._id) ids.push(req.user._id);
+    if (req.vendor?._id) ids.push(req.vendor._id);
+    if (req.user?.vendorId) ids.push(req.user.vendorId);
+    return Array.from(new Set(ids.map(id => String(id))));
+};
+
 // GET /api/vendor/notifications
 export const getVendorNotifications = asyncHandler(async (req, res) => {
     const { page = 1, limit = 20, type, isRead } = req.query;
@@ -10,8 +19,10 @@ export const getVendorNotifications = asyncHandler(async (req, res) => {
     const numericLimit = Math.max(1, Number(limit) || 20);
     const skip = (numericPage - 1) * numericLimit;
 
+    const vendorIds = getVendorIds(req);
+
     const filter = {
-        recipientId: req.user.id,
+        recipientId: { $in: vendorIds },
         recipientType: 'vendor',
     };
 
@@ -28,7 +39,7 @@ export const getVendorNotifications = asyncHandler(async (req, res) => {
         Notification.find(filter).sort({ createdAt: -1 }).skip(skip).limit(numericLimit),
         Notification.countDocuments(filter),
         Notification.countDocuments({
-            recipientId: req.user.id,
+            recipientId: { $in: vendorIds },
             recipientType: 'vendor',
             isRead: false,
         }),
@@ -51,10 +62,11 @@ export const getVendorNotifications = asyncHandler(async (req, res) => {
 
 // PUT /api/vendor/notifications/:id/read
 export const markVendorNotificationAsRead = asyncHandler(async (req, res) => {
+    const vendorIds = getVendorIds(req);
     const notification = await Notification.findOneAndUpdate(
         {
             _id: req.params.id,
-            recipientId: req.user.id,
+            recipientId: { $in: vendorIds },
             recipientType: 'vendor',
         },
         { isRead: true },
@@ -72,9 +84,10 @@ export const markVendorNotificationAsRead = asyncHandler(async (req, res) => {
 
 // PUT /api/vendor/notifications/read-all
 export const markAllVendorNotificationsAsRead = asyncHandler(async (req, res) => {
+    const vendorIds = getVendorIds(req);
     await Notification.updateMany(
         {
-            recipientId: req.user.id,
+            recipientId: { $in: vendorIds },
             recipientType: 'vendor',
             isRead: false,
         },
@@ -88,9 +101,10 @@ export const markAllVendorNotificationsAsRead = asyncHandler(async (req, res) =>
 
 // DELETE /api/vendor/notifications/:id
 export const deleteVendorNotification = asyncHandler(async (req, res) => {
+    const vendorIds = getVendorIds(req);
     const deleted = await Notification.findOneAndDelete({
         _id: req.params.id,
-        recipientId: req.user.id,
+        recipientId: { $in: vendorIds },
         recipientType: 'vendor',
     });
 
@@ -100,4 +114,3 @@ export const deleteVendorNotification = asyncHandler(async (req, res) => {
 
     res.status(200).json(new ApiResponse(200, null, 'Vendor notification deleted.'));
 });
-

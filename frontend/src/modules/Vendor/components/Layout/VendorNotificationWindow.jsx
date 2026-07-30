@@ -52,6 +52,14 @@ const VendorNotificationWindow = ({ isOpen, onClose, position = "right" }) => {
     if (actionUrl) {
       return actionUrl;
     }
+    if (
+      notification.type === "collaboration_request" ||
+      notification.type === "collaboration" ||
+      data.module === "creator-collaborations" ||
+      data.requestId
+    ) {
+      return "/vendor/creator-collaborations";
+    }
     if (data.type === "commission_update" || notification.type === "commission_update") {
       return "/vendor/profile";
     }

@@ -1,10 +1,13 @@
 import asyncHandler from '../../../utils/asyncHandler.js';
+import mongoose from 'mongoose';
 import ApiResponse from '../../../utils/ApiResponse.js';
 import ApiError from '../../../utils/ApiError.js';
 import Product from '../../../models/Product.model.js';
 import Vendor from '../../../models/Vendor.model.js';
 import Category from '../../../models/Category.model.js';
 import Brand from '../../../models/Brand.model.js';
+import CollaborationRequest from '../models/CollaborationRequest.model.js';
+import InfluencerCollaboration from '../models/InfluencerCollaboration.model.js';
 import { calculateEffectiveCommission, getGlobalCommissionSettingsData } from '../services/commissionHelper.js';
 
 // GET /api/influencer/marketplace
@@ -42,7 +45,7 @@ export const getMarketplaceProducts = asyncHandler(async (req, res) => {
     // Build product criteria
     const productQuery = {
         isActive: true,
-        allowInfluencer: true,
+        allowInfluencer: { $ne: false },
         stock: { $ne: 'out_of_stock' },
     };
 
@@ -70,16 +73,12 @@ export const getMarketplaceProducts = asyncHandler(async (req, res) => {
         ];
     }
 
-    // Fetch approved vendors with influencerProgram enabled
+    // Fetch approved/active vendors
     const activeVendors = await Vendor.find({
-        status: 'approved',
-        'influencerProgram.enabled': { $ne: false },
+        status: { $nin: ['suspended', 'rejected'] }
     }).select('_id storeName storeLogo influencerProgram');
 
-    const activeVendorIds = activeVendors.map((v) => v._id);
     const vendorMap = new Map(activeVendors.map((v) => [v._id.toString(), v]));
-
-    productQuery.vendorId = { $in: activeVendorIds };
 
     // Fetch products
     let sortOption = { createdAt: -1 };
@@ -93,6 +92,12 @@ export const getMarketplaceProducts = asyncHandler(async (req, res) => {
         .populate('brandId', 'name logo')
         .sort(sortOption);
 
+    // Map influencer's existing collaboration request statuses for products
+    const userCollabs = req.influencer
+        ? await CollaborationRequest.find({ influencerId: req.influencer._id }).select('productId status').lean()
+        : [];
+    const collabMap = new Map(userCollabs.map(c => [String(c.productId), c.status]));
+
     // Calculate effective commissions & attach vendor info
     let processedProducts = await Promise.all(
         rawProducts.map(async (product) => {
@@ -101,6 +106,7 @@ export const getMarketplaceProducts = asyncHandler(async (req, res) => {
 
             const mrp = product.originalPrice || product.price;
             const discountPercent = mrp > product.price ? Math.round(((mrp - product.price) / mrp) * 100) : 0;
+            const collabStatus = collabMap.get(String(product._id)) || null;
 
             return {
                 _id: product._id,
@@ -124,10 +130,20 @@ export const getMarketplaceProducts = asyncHandler(async (req, res) => {
                 },
                 commissionPercent: comm.commissionPercent,
                 estimatedEarnings: comm.estimatedEarnings,
+                collabStatus,
                 createdAt: product.createdAt,
             };
         })
     );
+
+    // Prioritize products with real uploaded Cloudinary images first
+    processedProducts.sort((a, b) => {
+        const aHasImage = a.image && typeof a.image === 'string' && a.image.startsWith('http') && !a.image.includes('80x80');
+        const bHasImage = b.image && typeof b.image === 'string' && b.image.startsWith('http') && !b.image.includes('80x80');
+        if (aHasImage && !bHasImage) return -1;
+        if (!aHasImage && bHasImage) return 1;
+        return 0;
+    });
 
     if (minCommission) {
         processedProducts = processedProducts.filter(
@@ -177,21 +193,27 @@ export const getMarketplaceProductBySlug = asyncHandler(async (req, res) => {
     }
 
     const { slug } = req.params;
+    const isObjectId = mongoose.Types.ObjectId.isValid(slug) && /^[a-fA-F0-9]{24}$/.test(slug);
+    const filter = isObjectId ? { $or: [{ _id: slug }, { slug }], isActive: true } : { slug, isActive: true };
 
-    const product = await Product.findOne({ slug, isActive: true, allowInfluencer: true })
+    const product = await Product.findOne(filter)
         .populate('categoryId', 'name slug')
         .populate('brandId', 'name logo')
-        .populate('vendorId', 'storeName storeLogo influencerProgram status');
+        .populate('vendorId', 'storeName storeLogo storefrontId rating isVerified influencerProgram status');
 
     if (!product) {
         throw new ApiError(404, 'Product not found or not available for promotion.');
     }
 
-    if (!product.vendorId || product.vendorId.status !== 'approved') {
-        throw new ApiError(400, 'Product vendor is not active.');
-    }
+    const comm = await calculateEffectiveCommission(product, product.vendorId || {});
 
-    const comm = await calculateEffectiveCommission(product, product.vendorId);
+    let collabDoc = null;
+    if (req.influencer) {
+        collabDoc = await InfluencerCollaboration.findOne({ influencerId: req.influencer._id, productId: product._id }).sort({ updatedAt: -1 }).lean();
+        if (!collabDoc) {
+            collabDoc = await CollaborationRequest.findOne({ influencerId: req.influencer._id, productId: product._id }).sort({ createdAt: -1 }).lean();
+        }
+    }
 
     const related = await Product.find({
         categoryId: product.categoryId?._id,
@@ -210,6 +232,7 @@ export const getMarketplaceProductBySlug = asyncHandler(async (req, res) => {
                     ...product.toObject(),
                     commissionPercent: comm.commissionPercent,
                     estimatedEarnings: comm.estimatedEarnings,
+                    collabStatus: collabDoc ? collabDoc.status : null,
                 },
                 relatedProducts: related,
             },
@@ -217,3 +240,62 @@ export const getMarketplaceProductBySlug = asyncHandler(async (req, res) => {
         )
     );
 });
+
+/**
+ * GET /api/influencer/deal-requests
+ * Get all product deal/collaboration requests submitted by the logged-in influencer.
+ */
+export const getMyDealRequests = asyncHandler(async (req, res) => {
+    const influencerId = req.influencer._id;
+    const { status, page = 1, limit = 20 } = req.query;
+
+    const filter = { influencerId };
+    if (status && status !== 'all') {
+        filter.status = status;
+    }
+
+    const skip = (Number(page) - 1) * Number(limit);
+
+    const [threads, requests] = await Promise.all([
+        InfluencerCollaboration.find(filter)
+            .populate('productId', 'name slug price originalPrice image images categoryId brandId')
+            .populate('vendorId', 'storeName storeLogo rating isVerified')
+            .sort({ updatedAt: -1 })
+            .skip(skip)
+            .limit(Number(limit))
+            .lean(),
+        CollaborationRequest.find(filter)
+            .populate('productId', 'name slug price originalPrice image images categoryId brandId')
+            .populate('vendorId', 'storeName storeLogo rating isVerified')
+            .sort({ createdAt: -1 })
+            .lean(),
+    ]);
+
+    const threadProductIds = new Set(threads.map(t => String(t.productId?._id || t.productId)));
+    const merged = [...threads];
+
+    requests.forEach(r => {
+        const pId = String(r.productId?._id || r.productId);
+        if (!threadProductIds.has(pId)) {
+            merged.push({
+                _id: r._id,
+                influencerId: r.influencerId,
+                vendorId: r.vendorId,
+                productId: r.productId,
+                status: r.status === 'pending' ? 'requested' : r.status,
+                offeredCommissionPercent: r.offeredCommissionPercent,
+                message: r.message,
+                createdAt: r.createdAt,
+            });
+        }
+    });
+
+    res.status(200).json(
+        new ApiResponse(
+            200,
+            { dealRequests: merged, total: merged.length },
+            'Deal requests retrieved successfully.'
+        )
+    );
+});
+

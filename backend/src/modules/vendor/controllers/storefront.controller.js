@@ -179,7 +179,12 @@ export const getPublicStorefront = asyncHandler(async (req, res) => {
     if (pageKey === 'offer') pageKey = 'offers';
     const previewMode = req.query.preview === 'true'; // allows draft previewing inside builder
 
-    const store = await VendorStore.findOne({ slug, isActive: true })
+    const isObjectId = mongoose.Types.ObjectId.isValid(slug) && /^[a-fA-F0-9]{24}$/.test(slug);
+    const storeFilter = isObjectId 
+        ? { $or: [{ _id: slug }, { vendorId: slug }, { slug }], isActive: true } 
+        : { slug, isActive: true };
+
+    const store = await VendorStore.findOne(storeFilter)
         .populate('vendorId', 'storeName storeLogo rating reviewCount isVerified joinDate')
         .populate('featuredCategories.category', 'name slug image')
         .lean();
@@ -357,12 +362,30 @@ export const getPublicStorefront = asyncHandler(async (req, res) => {
     }, 'Public storefront loaded successfully.'));
 });
 
+// Helper to find store by slug, _id, or vendorId
+const findStoreBySlugOrId = async (slug, populateOptions = null, raw = false) => {
+    const isObjectId = mongoose.Types.ObjectId.isValid(slug) && /^[a-fA-F0-9]{24}$/.test(slug);
+    const storeFilter = isObjectId 
+        ? { $or: [{ _id: slug }, { vendorId: slug }, { slug }], isActive: true } 
+        : { slug, isActive: true };
+
+    let query = VendorStore.findOne(storeFilter);
+    if (populateOptions) {
+        if (Array.isArray(populateOptions)) {
+            populateOptions.forEach(opt => { query = query.populate(opt); });
+        } else {
+            query = query.populate(populateOptions);
+        }
+    }
+    return raw ? await query : await query.lean();
+};
+
 // GET /api/store/:slug/products (Default catalog list)
 export const getStorefrontProducts = asyncHandler(async (req, res) => {
     const { slug } = req.params;
     const { page = 1, limit = 20, sort = 'newest' } = req.query;
 
-    const store = await VendorStore.findOne({ slug, isActive: true }).lean();
+    const store = await findStoreBySlugOrId(slug);
     if (!store) throw new ApiError(404, 'Storefront not found.');
 
     const numPage = Math.max(Number(page) || 1, 1);
@@ -414,7 +437,7 @@ export const searchStorefrontProducts = asyncHandler(async (req, res) => {
         limit = 20
     } = req.query;
 
-    const store = await VendorStore.findOne({ slug, isActive: true }).lean();
+    const store = await findStoreBySlugOrId(slug);
     if (!store) throw new ApiError(404, 'Storefront not found.');
 
     const numPage = Math.max(Number(page) || 1, 1);
@@ -495,9 +518,10 @@ export const searchStorefrontProducts = asyncHandler(async (req, res) => {
 export const getStorefrontAbout = asyncHandler(async (req, res) => {
     const { slug } = req.params;
 
-    const store = await VendorStore.findOne({ slug, isActive: true })
-        .populate('vendorId', 'storeDescription phone email rating reviewCount joinDate')
-        .lean();
+    const store = await findStoreBySlugOrId(slug, {
+        path: 'vendorId',
+        select: 'storeDescription phone email rating reviewCount joinDate'
+    });
 
     if (!store) throw new ApiError(404, 'Storefront not found.');
 
@@ -518,7 +542,7 @@ export const createStorefrontInquiry = asyncHandler(async (req, res) => {
     const { slug } = req.params;
     const { name, email, message } = req.body;
 
-    const store = await VendorStore.findOne({ slug, isActive: true });
+    const store = await findStoreBySlugOrId(slug, null, true);
     if (!store) {
         throw new ApiError(404, 'Storefront not found.');
     }

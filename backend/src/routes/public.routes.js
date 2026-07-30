@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import mongoose from 'mongoose';
 import asyncHandler from '../utils/asyncHandler.js';
 import ApiResponse from '../utils/ApiResponse.js';
 import ApiError from '../utils/ApiError.js';
@@ -709,7 +710,11 @@ router.get('/popular', marketingCache, asyncHandler(async (req, res) => {
 
 // GET /api/products/similar/:id
 router.get('/similar/:id', detailCache, asyncHandler(async (req, res) => {
-    const product = await Product.findById(req.params.id).select('_id categoryId').lean();
+    const identifier = req.params.id;
+    const isObjectId = mongoose.Types.ObjectId.isValid(identifier) && /^[a-fA-F0-9]{24}$/.test(identifier);
+    const filter = isObjectId ? { _id: identifier } : { slug: identifier };
+
+    const product = await Product.findOne(filter).select('_id categoryId').lean();
     if (!product) throw new ApiError(404, 'Product not found.');
     const activeSaleProductIds = await getActiveSaleProductIds();
     const similarFilter = { isActive: true, _id: { $ne: product._id }, categoryId: product.categoryId };
@@ -725,7 +730,11 @@ router.get('/similar/:id', detailCache, asyncHandler(async (req, res) => {
 }));
 
 const getProductDetail = asyncHandler(async (req, res) => {
-    const product = await Product.findById(req.params.id)
+    const identifier = req.params.id;
+    const isObjectId = mongoose.Types.ObjectId.isValid(identifier) && /^[a-fA-F0-9]{24}$/.test(identifier);
+    const filter = isObjectId ? { _id: identifier } : { slug: identifier };
+
+    const product = await Product.findOne(filter)
         .populate('categoryId', 'name')
         .populate('brandId', 'name')
         .populate({

@@ -39,10 +39,15 @@ export const getRecentlyViewed = asyncHandler(async (req, res) => {
 // POST /api/user/recently-viewed
 export const recordRecentlyViewed = asyncHandler(async (req, res) => {
     const { productId } = req.body;
-    const normalizedProductId = String(productId || '').trim();
+    let normalizedProductId = String(productId || '').trim();
 
-    if (!mongoose.Types.ObjectId.isValid(normalizedProductId)) {
-        throw new ApiError(400, 'Invalid product id.');
+    if (!mongoose.Types.ObjectId.isValid(normalizedProductId) || !/^[a-fA-F0-9]{24}$/.test(normalizedProductId)) {
+        const prod = await Product.findOne({ slug: normalizedProductId }).select('_id').lean();
+        if (prod) {
+            normalizedProductId = String(prod._id);
+        } else {
+            throw new ApiError(400, 'Invalid product id.');
+        }
     }
 
     const product = await Product.findOne({ _id: normalizedProductId, isActive: true }).select('_id');

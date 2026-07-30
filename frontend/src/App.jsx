@@ -214,7 +214,9 @@ import InfluencerDashboard from "./modules/Influencer/Dashboard/InfluencerDashbo
 import InfluencerLayout from "./modules/Influencer/components/InfluencerLayout";
 import InfluencerMarketplace from "./modules/Influencer/pages/Marketplace";
 import InfluencerMarketplaceProductDetail from "./modules/Influencer/pages/MarketplaceProductDetail";
+import RequestedProducts from "./modules/Influencer/pages/RequestedProducts";
 import InfluencerAffiliateLinks from "./modules/Influencer/pages/AffiliateLinks";
+
 import InfluencerWalletDashboard from "./modules/Influencer/pages/WalletDashboard";
 import VendorInfluencerSettings from "./modules/Vendor/pages/VendorInfluencerSettings";
 import VendorInfluencerWallet from "./modules/Vendor/pages/VendorInfluencerWallet";
@@ -929,7 +931,9 @@ const AppRoutes = () => {
         <Route path="dashboard" element={<InfluencerDashboard />} />
         <Route path="marketplace" element={<InfluencerMarketplace />} />
         <Route path="product/:slug" element={<InfluencerMarketplaceProductDetail />} />
+        <Route path="deal-requests" element={<RequestedProducts />} />
         <Route path="affiliate-links" element={<InfluencerAffiliateLinks />} />
+
         <Route path="wallet" element={<InfluencerWalletDashboard />} />
         <Route path="analytics" element={<InfluencerAnalytics />} />
         <Route path="support" element={<InfluencerSupport />} />

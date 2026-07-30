@@ -1,8 +1,11 @@
 import asyncHandler from '../../../utils/asyncHandler.js';
+import mongoose from 'mongoose';
 import ApiResponse from '../../../utils/ApiResponse.js';
 import ApiError from '../../../utils/ApiError.js';
+
 import InfluencerCollaboration from '../../influencer/models/InfluencerCollaboration.model.js';
 import InfluencerCollaborationMessage from '../../influencer/models/InfluencerCollaborationMessage.model.js';
+import CollaborationRequest from '../../influencer/models/CollaborationRequest.model.js';
 import AffiliateLink from '../../influencer/models/AffiliateLink.model.js';
 import Influencer from '../../influencer/models/Influencer.model.js';
 import { emitToRoom } from '../../../services/socket.service.js';
@@ -12,12 +15,46 @@ import { createNotification } from '../../../services/notification.service.js';
  * GET /api/vendor/creator-collaborations
  */
 export const getVendorCollaborations = asyncHandler(async (req, res) => {
-    const vendorId = req.user.id;
+    const vendorId = req.vendor?._id || req.user?.id;
     const { status, page = 1, limit = 20 } = req.query;
 
-    const filter = { vendorId };
+    const vendorIds = Array.from(new Set([
+        String(vendorId || ''),
+        String(req.user?.id || ''),
+        String(req.user?._id || ''),
+        String(req.vendor?._id || '')
+    ].filter(Boolean))).map(id => new mongoose.Types.ObjectId(id));
+
+    // Auto-sync any CollaborationRequests missing thread documents
+    const rawRequests = await CollaborationRequest.find({
+        vendorId: { $in: vendorIds }
+    }).lean();
+
+    for (const r of rawRequests) {
+        const existingThread = await InfluencerCollaboration.findOne({
+            vendorId: r.vendorId,
+            influencerId: r.influencerId,
+            productId: r.productId,
+        });
+
+        if (!existingThread) {
+            await InfluencerCollaboration.create({
+                vendorId: r.vendorId,
+                influencerId: r.influencerId,
+                productId: r.productId,
+                status: r.status === 'pending' ? 'requested' : r.status,
+                offeredCommissionPercent: r.offeredCommissionPercent || 10,
+                offer: { commissionPercent: r.offeredCommissionPercent || 10 },
+                lastMessage: r.message || 'Requested promotional deal',
+                lastMessageAt: r.createdAt || new Date(),
+            });
+        }
+    }
+
+    const filter = { vendorId: { $in: vendorIds } };
     if (status && status !== 'all') {
         if (status === 'active') filter.status = { $in: ['accepted', 'requested'] };
+        else if (status === 'pending') filter.status = { $in: ['pending', 'requested'] };
         else filter.status = status;
     }
 
@@ -25,9 +62,9 @@ export const getVendorCollaborations = asyncHandler(async (req, res) => {
     const [collaborations, total] = await Promise.all([
         InfluencerCollaboration.find(filter)
             .populate('influencerId', 'name slug profileImage category socials bio followersCount')
-            .populate('products', 'name slug price images')
-            .populate('productId', 'name slug price images')
-            .sort({ lastMessageAt: -1 })
+            .populate('products', 'name slug price originalPrice image images')
+            .populate('productId', 'name slug price originalPrice image images')
+            .sort({ lastMessageAt: -1, createdAt: -1 })
             .skip(skip)
             .limit(Number(limit))
             .lean(),
@@ -41,14 +78,22 @@ export const getVendorCollaborations = asyncHandler(async (req, res) => {
  * GET /api/vendor/creator-collaborations/:id
  */
 export const getCollaborationDetail = asyncHandler(async (req, res) => {
-    const vendorId = req.user.id;
-    const collab = await InfluencerCollaboration.findOne({ _id: req.params.id, vendorId })
+    const vendorId = req.vendor?._id || req.user?.id;
+    const vendorIds = Array.from(new Set([
+        String(vendorId || ''),
+        String(req.user?.id || ''),
+        String(req.user?._id || ''),
+        String(req.vendor?._id || '')
+    ].filter(Boolean))).map(id => new mongoose.Types.ObjectId(id));
+
+    const collab = await InfluencerCollaboration.findOne({ _id: req.params.id, vendorId: { $in: vendorIds } })
         .populate('influencerId', 'name slug profileImage category socials bio email')
-        .populate('products', 'name slug price images')
-        .populate('productId', 'name slug price images')
+        .populate('products', 'name slug price originalPrice image images')
+        .populate('productId', 'name slug price originalPrice image images')
         .lean();
 
     if (!collab) throw new ApiError(404, 'Collaboration thread not found.');
+
 
     const messages = await InfluencerCollaborationMessage.find({ collaborationId: collab._id })
         .sort({ createdAt: 1 })
@@ -152,9 +197,25 @@ export const updateCollaborationStatus = asyncHandler(async (req, res) => {
         }
     }
 
-    // Emit socket event
+    // Sync CollaborationRequest status
+    await CollaborationRequest.updateMany(
+        { productId: collab.productId, influencerId: collab.influencerId },
+        { status: status === 'accepted' ? 'accepted' : status === 'rejected' ? 'declined' : status }
+    ).catch(() => {});
+
+    // Emit socket events
     emitToRoom(`collab_${collab._id}`, 'collaboration_updated', { collaborationId: collab._id, status, collab });
     emitToRoom(`influencer_${collab.influencerId}`, 'collaboration_updated', { collaborationId: collab._id, status, collab });
+
+    // Send real-time notification to influencer
+    createNotification({
+        recipientId: collab.influencerId,
+        recipientType: 'influencer',
+        title: status === 'accepted' ? '🎉 Deal Approved!' : 'Deal Status Updated',
+        message: status === 'accepted' ? 'Vendor approved your promotional deal request!' : `Vendor updated your deal status to ${status}.`,
+        type: 'collaboration',
+        data: { collabId: String(collab._id), productId: String(collab.productId) },
+    }).catch(() => {});
 
     res.status(200).json(new ApiResponse(200, collab, `Collaboration status updated to ${status}.`));
 });

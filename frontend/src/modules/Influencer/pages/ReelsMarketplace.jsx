@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { FiFilm, FiLink, FiHeart, FiTrendingUp, FiStar, FiFilter, FiSearch, FiShoppingBag, FiBarChart2, FiPlay, FiPause, FiX, FiCheck, FiCopy, FiUpload } from 'react-icons/fi';
+import { useSearchParams } from 'react-router-dom';
 import api from '../../../shared/utils/api';
 import toast from 'react-hot-toast';
 
@@ -14,8 +15,13 @@ const VideoPreview = ({ src, thumbnail }) => {
     const videoRef = useRef();
     const toggle = (e) => {
         e.stopPropagation();
-        if (playing) { videoRef.current?.pause(); setPlaying(false); }
-        else { videoRef.current?.play(); setPlaying(true); }
+        if (playing) { 
+            videoRef.current?.pause(); 
+            setPlaying(false); 
+        } else { 
+            videoRef.current?.play().catch(() => setPlaying(false)); 
+            setPlaying(true); 
+        }
     };
     return (
         <div className="relative cursor-pointer w-full h-full bg-slate-950" onClick={toggle}>
@@ -29,17 +35,23 @@ const VideoPreview = ({ src, thumbnail }) => {
     );
 };
 
-const UploadReelModal = ({ onClose, onSuccess }) => {
+const UploadReelModal = ({ onClose, onSuccess, initialProductId = '' }) => {
     const [title, setTitle] = useState('');
     const [caption, setCaption] = useState('');
     const [videoFile, setVideoFile] = useState(null);
     const [videoPreview, setVideoPreview] = useState('');
-    const [selectedProduct, setSelectedProduct] = useState('');
+    const [selectedProduct, setSelectedProduct] = useState(initialProductId || '');
     const [products, setProducts] = useState([]);
     const [loadingProducts, setLoadingProducts] = useState(false);
     const [uploading, setUploading] = useState(false);
     const [progress, setProgress] = useState(0);
     const fileInputRef = useRef();
+
+    useEffect(() => {
+        if (initialProductId) {
+            setSelectedProduct(initialProductId);
+        }
+    }, [initialProductId]);
 
     useEffect(() => {
         setLoadingProducts(true);
@@ -48,6 +60,7 @@ const UploadReelModal = ({ onClose, onSuccess }) => {
             .catch(() => {})
             .finally(() => setLoadingProducts(false));
     }, []);
+
 
     const handleVideoSelect = (e) => {
         const file = e.target.files?.[0];
@@ -468,6 +481,11 @@ const RequestCollaborationModal = ({ onClose }) => {
 };
 
 const ReelsMarketplace = () => {
+    const [searchParams] = useSearchParams();
+    const urlProductId = searchParams.get('productId');
+    const autoUpload = searchParams.get('autoUpload');
+    const [preselectedProductId, setPreselectedProductId] = useState(urlProductId || '');
+
     const [reels, setReels] = useState([]);
     const [loading, setLoading] = useState(true);
     const [sort, setSort] = useState('trending');
@@ -481,6 +499,14 @@ const ReelsMarketplace = () => {
     const [showInvitationsModal, setShowInvitationsModal] = useState(false);
     const [showRequestModal, setShowRequestModal] = useState(false);
     const [favouriting, setFavouriting] = useState('');
+
+    useEffect(() => {
+        if (urlProductId && autoUpload === 'true') {
+            setPreselectedProductId(urlProductId);
+            setShowUploadModal(true);
+        }
+    }, [urlProductId, autoUpload]);
+
 
     const fetchReels = useCallback(async () => {
         setLoading(true);
@@ -682,8 +708,16 @@ const ReelsMarketplace = () => {
             )}
 
             {showUploadModal && (
-                <UploadReelModal onClose={() => setShowUploadModal(false)} onSuccess={fetchReels} />
+                <UploadReelModal
+                    initialProductId={preselectedProductId}
+                    onClose={() => {
+                        setShowUploadModal(false);
+                        setPreselectedProductId('');
+                    }}
+                    onSuccess={fetchReels}
+                />
             )}
+
         </div>
     );
 };

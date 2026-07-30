@@ -266,12 +266,13 @@ const Notifications = () => {
             const documentId = data.documentId || (typeof data.get === 'function' ? data.get('documentId') : null);
 
             if (actionUrl) navigate(actionUrl);
+            else if (notifType === 'collaboration_request' || notifType === 'collaboration' || row.type === 'collaboration_request' || row.type === 'collaboration') navigate('/vendor/creator-collaborations');
             else if (notifType === 'commission_update') navigate('/vendor/profile');
             else if (inquiryId) navigate(`/vendor/store-builder?inquiryId=${inquiryId}`);
             else if (returnRequestId) navigate(`/vendor/return-requests/${returnRequestId}`);
             else if (documentId) navigate("/vendor/documents");
             else if (orderId) navigate("/vendor/orders/all-orders");
-            else navigate("/vendor/profile");
+            else navigate("/vendor/dashboard");
 
             if (!row.isRead) {
               handleMarkRead(row._id);

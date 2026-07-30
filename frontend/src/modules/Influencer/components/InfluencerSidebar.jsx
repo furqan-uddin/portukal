@@ -12,6 +12,7 @@ import {
     FiAward,
     FiX,
     FiFilm,
+    FiClock,
 } from 'react-icons/fi';
 import { useInfluencerAuth } from '../hooks/useInfluencerAuth';
 import toast from 'react-hot-toast';
@@ -26,6 +27,7 @@ const InfluencerSidebar = ({ isOpen, setIsOpen, isCollapsed }) => {
     const navItems = [
         { title: 'Dashboard', route: '/influencer/dashboard', icon: FiHome, requiresApproval: false },
         { title: 'Marketplace', route: '/influencer/marketplace', icon: FiShoppingBag, requiresApproval: true },
+        { title: 'My Deal Requests', route: '/influencer/deal-requests', icon: FiClock, requiresApproval: true },
         { title: 'My Affiliate Links', route: '/influencer/affiliate-links', icon: FiLink, requiresApproval: true },
         { title: 'Wallet & Withdrawals', route: '/influencer/wallet', icon: FiDollarSign, requiresApproval: true },
         { title: 'Analytics BI', route: '/influencer/analytics', icon: FiBarChart2, requiresApproval: true },
@@ -33,6 +35,7 @@ const InfluencerSidebar = ({ isOpen, setIsOpen, isCollapsed }) => {
         { title: 'Profile', route: '/influencer/profile', icon: FiUser, requiresApproval: false },
         { title: 'Support', route: '/influencer/support', icon: FiHelpCircle, requiresApproval: false },
     ];
+
 
     const handleNavigation = (item) => {
         if (item.isComingSoon) {

@@ -90,16 +90,16 @@ export const sendPromotionInvitation = asyncHandler(async (req, res) => {
  * Get all promotion invitations sent by this vendor.
  */
 export const listVendorInvitations = asyncHandler(async (req, res) => {
-    const vendorId = req.user.id;
+    const vendorId = req.vendor?._id || req.user?.id;
     const { status, page = 1, limit = 20 } = req.query;
-    const filter = { vendorId };
+    const filter = { $or: [{ vendorId }, { vendorId: req.user?.id }] };
     if (status) filter.status = status;
 
     const skip = (Number(page) - 1) * Number(limit);
     const [invitations, total] = await Promise.all([
         CollaborationRequest.find(filter)
             .populate('influencerId', 'name slug profileImage category socials')
-            .populate('productId', 'name slug price images')
+            .populate('productId', 'name slug price originalPrice image images')
             .sort({ createdAt: -1 })
             .skip(skip)
             .limit(Number(limit))
