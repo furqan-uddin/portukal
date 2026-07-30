@@ -301,15 +301,18 @@ export const getVendorReelAnalyticsOverview = asyncHandler(async (req, res) => {
  * Vendor approves an influencer's reel uploaded for their product.
  */
 export const approveInfluencerReel = asyncHandler(async (req, res) => {
-    const reel = await Reel.findOne({ _id: req.params.id, vendorId: req.user.id, status: 'vendor_pending' });
+    const reel = await Reel.findOne({ _id: req.params.id, vendorId: req.user.id, status: { $in: ['vendor_pending', 'pending'] } });
     if (!reel) throw new ApiError(404, 'Influencer reel pending your review was not found.');
 
     reel.vendorApprovalStatus = 'approved';
-    reel.status = 'pending'; // Moves to admin review
+    reel.status = 'approved';
+    reel.publishedAt = new Date();
+    reel.visibility = 'public';
     await reel.save();
 
-    res.status(200).json(new ApiResponse(200, reel, 'Influencer reel approved! Submitted for admin review.'));
+    res.status(200).json(new ApiResponse(200, reel, 'Influencer reel approved and published to public feed!'));
 });
+
 
 /**
  * PATCH /api/vendor/reels/:id/reject-influencer
