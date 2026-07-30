@@ -45,7 +45,9 @@ export const getFeed = asyncHandler(async (req, res) => {
     const [reels, total] = await Promise.all([
         Reel.find(filter)
             .populate('vendorId', 'storeName logoUrl')
+            .populate('influencerId', 'name slug profileImage avatar')
             .populate('productId', 'name slug price images discountPercent')
+
             .populate({ path: 'taggedProducts.productId', select: 'name slug price images' })
             .sort({ isFeatured: -1, trendingScore: -1, publishedAt: -1 })
             .skip(skip)

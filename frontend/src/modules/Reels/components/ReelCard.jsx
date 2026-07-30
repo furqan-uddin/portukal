@@ -219,10 +219,12 @@ const ReelCard = ({ reel, toggleLike, shareReel, saveReel, reportReel, onView, o
 
     // Resolve profile details
     const displayName = reel.influencerId?.name || reel.vendorId?.storeName || reel.creatorName || 'Creator';
-    const avatarUrl = reel.influencerId?.profileImage || reel.vendorId?.logoUrl || reel.creatorAvatar || '';
+    const avatarUrl = reel.influencerId?.profileImage || reel.influencerId?.avatar || reel.vendorId?.logoUrl || reel.creatorAvatar || '';
     const creatorHandle = reel.influencerId?.slug || displayName.toLowerCase().replace(/\s+/g, '_');
 
-    const profileStoreLink = reel.vendorId?.storefrontId?.slug
+    const profileStoreLink = reel.influencerId
+        ? `/influencer/${creatorHandle}`
+        : reel.vendorId?.storefrontId?.slug
         ? `/store/${reel.vendorId.storefrontId.slug}`
         : reel.vendorId?._id || reel.vendorId?.id
         ? `/store/${reel.vendorId.slug || (reel.vendorId._id || reel.vendorId.id)}`
@@ -234,7 +236,6 @@ const ReelCard = ({ reel, toggleLike, shareReel, saveReel, reportReel, onView, o
         }
     };
 
-    const vendorName = reel.vendorId?.storeName || reel.creatorName || 'vendor';
     const videoSrc = reel.video?.secureUrl || reel.videoUrl;
 
     return (
@@ -269,23 +270,29 @@ const ReelCard = ({ reel, toggleLike, shareReel, saveReel, reportReel, onView, o
                     <button 
                         onClick={handleOpenProfile}
                         className="h-10 w-10 rounded-full border border-white/50 overflow-hidden shadow-lg flex-shrink-0 bg-neutral-800 cursor-pointer hover:scale-105 transition-all"
-                        title={`View ${vendorName}'s profile`}
+                        title={`View ${displayName}'s profile`}
                     >
-                        {reel.vendorId?.logoUrl || reel.influencerId?.profileImage || reel.creatorAvatar
-                            ? <img src={reel.vendorId?.logoUrl || reel.influencerId?.profileImage || reel.creatorAvatar} alt={vendorName} className="w-full h-full object-cover" />
-                            : <img src={`https://api.dicebear.com/7.x/shapes/svg?seed=${vendorName}`} alt={vendorName} className="w-full h-full" />
-                        }
+                        {avatarUrl ? (
+                            <img src={avatarUrl} alt={displayName} className="w-full h-full object-cover" />
+                        ) : (
+                            <img src={`https://api.dicebear.com/7.x/shapes/svg?seed=${displayName}`} alt={displayName} className="w-full h-full" />
+                        )}
                     </button>
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2 flex-wrap">
                         <button 
                             onClick={handleOpenProfile}
-                            className="font-bold text-white text-sm drop-shadow-md hover:underline cursor-pointer text-left"
+                            className="font-bold text-white text-sm drop-shadow-md hover:underline cursor-pointer text-left flex items-center gap-1.5"
                         >
-                            {vendorName}
+                            <span>{displayName}</span>
+                            {reel.influencerId && (
+                                <span className="text-[10px] bg-purple-600/90 text-white font-extrabold px-1.5 py-0.5 rounded-md shadow-sm">
+                                    Creator ✨
+                                </span>
+                            )}
                         </button>
                         <button 
                             onClick={() => setIsFollowing(!isFollowing)}
-                            className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${
+                            className={`px-2.5 py-0.5 rounded-lg text-xs font-bold transition-all ${
                                 isFollowing 
                                     ? 'bg-white/20 text-white border border-white/30' 
                                     : 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-md'
@@ -295,6 +302,7 @@ const ReelCard = ({ reel, toggleLike, shareReel, saveReel, reportReel, onView, o
                         </button>
                     </div>
                 </div>
+
 
                 {/* Caption */}
                 {reel.caption && (
