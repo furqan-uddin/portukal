@@ -36,7 +36,7 @@ import adminReelRoutes from './modules/reels/routes/admin.reel.routes.js';
 import influencerReelRoutes from './modules/reels/routes/influencer.reel.routes.js';
 import userReelRoutes from './modules/reels/routes/user.reel.routes.js';
 import influencerSupportRoutes from './modules/influencer/routes/influencerSupport.routes.js';
-import adminInfluencerSupportRoutes from './modules/Admin/routes/adminInfluencerSupport.routes.js';
+import adminInfluencerSupportRoutes from './modules/admin/routes/adminInfluencerSupport.routes.js';
 
 // Middleware imports
 import { apiLimiter } from './middlewares/rateLimiter.js';
