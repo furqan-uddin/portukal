@@ -141,6 +141,17 @@ export const getPublicCreatorProfile = asyncHandler(async (req, res) => {
         AffiliateLink.countDocuments({ influencerId: influencerId }),
     ]);
 
+    let isFollowing = false;
+    if (req.user?.id || req.user?._id) {
+        const userId = req.user.id || req.user._id;
+        const followDoc = await ReelFollow.findOne({
+            followerId: userId,
+            entityId: influencerId,
+            entityType: 'influencer',
+        });
+        isFollowing = !!followDoc;
+    }
+
     // Format response object
     const profile = {
         _id: influencer._id,
@@ -160,8 +171,9 @@ export const getPublicCreatorProfile = asyncHandler(async (req, res) => {
 
     const stats = {
         totalReels: totalReelsCount,
-        followersCount: followersCount || influencer.followers || 0,
-        followingCount: followingCount || 0,
+        followersCount: typeof followersCount === 'number' ? followersCount : (influencer.followers || 0),
+        followingCount: typeof followingCount === 'number' ? followingCount : 0,
+        isFollowing,
         totalViews,
         totalLikes: likeCount,
         totalSaves: saveCount,

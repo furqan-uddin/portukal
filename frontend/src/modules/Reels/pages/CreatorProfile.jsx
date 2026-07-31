@@ -30,8 +30,8 @@ const CreatorProfile = () => {
         }
     };
 
-    const [isFollowing, setIsFollowing] = useState(checkIsFollowed);
-    const [followersCount, setFollowersCount] = useState(() => (checkIsFollowed() ? 10501 : 10500));
+    const [isFollowing, setIsFollowing] = useState(false);
+    const [followersCount, setFollowersCount] = useState(0);
     const [showMenu, setShowMenu] = useState(false);
     const [reelsList, setReelsList] = useState([]);
     const [creatorData, setCreatorData] = useState(null);
@@ -39,34 +39,69 @@ const CreatorProfile = () => {
     const [loading, setLoading] = useState(false);
 
     // Context check ONLY to prevent self-following on public view
+    const creatorUserId = String(
+        creatorData?.profile?.user?._id || 
+        creatorData?.profile?.user?.id || 
+        (typeof creatorData?.profile?.user === 'string' ? creatorData.profile.user : '')
+    );
+    const creatorInfluencerId = String(creatorData?.profile?._id || creatorData?.profile?.id || '');
+    const creatorSlug = String(creatorData?.profile?.slug || creatorData?.profile?.username || '').toLowerCase();
+    const creatorEmail = String(creatorData?.profile?.email || '').toLowerCase();
+
+    const currentUserId = String(currentUser?._id || currentUser?.id || '');
+    const currentInfluencerId = String(currentInfluencer?._id || currentInfluencer?.id || '');
+    const currentSlug = String(currentInfluencer?.slug || currentInfluencer?.username || '').toLowerCase();
+    const currentEmail = String(currentUser?.email || currentInfluencer?.email || '').toLowerCase();
+
     const isSelf = Boolean(
         creatorData?.profile && (
-            (currentInfluencer?._id && String(currentInfluencer._id) === String(creatorData.profile._id)) ||
-            (currentInfluencer?.user && String(currentInfluencer.user) === String(creatorData.profile.user)) ||
-            (currentUser && creatorData.profile.user && (String(currentUser._id || currentUser.id) === String(creatorData.profile.user)))
+            (currentInfluencerId && creatorInfluencerId && currentInfluencerId === creatorInfluencerId) ||
+            (currentUserId && creatorUserId && currentUserId === creatorUserId) ||
+            (currentSlug && creatorSlug && currentSlug === creatorSlug) ||
+            (currentEmail && creatorEmail && currentEmail === creatorEmail) ||
+            (rawId && currentSlug && rawId.toLowerCase() === currentSlug)
         )
     );
 
-    const handleToggleFollow = () => {
+    const handleToggleFollow = async () => {
         if (!currentUser && !currentInfluencer) {
             toast.error('Please log in to follow creators.');
             navigate('/login');
             return;
         }
-        const nextState = !isFollowing;
+
+        const creatorTargetId = creatorData?.profile?._id || id;
+        const prevFollowing = isFollowing;
+        const prevCount = followersCount;
+
+        // Optimistic UI Update
+        const nextState = !prevFollowing;
         setIsFollowing(nextState);
-        setFollowersCount((prev) => (nextState ? prev + 1 : prev - 1));
+        setFollowersCount((prev) => (nextState ? prev + 1 : Math.max(0, prev - 1)));
+
         try {
-            let list = JSON.parse(localStorage.getItem('followed_creators') || '[]');
-            if (nextState) {
-                if (!list.includes(formattedHandle)) list.push(formattedHandle);
-                toast.success(`You are now following ${creatorData?.profile?.name || displayName}!`);
-            } else {
-                list = list.filter((item) => item !== formattedHandle && item !== rawId);
-                toast.success(`Unfollowed ${creatorData?.profile?.name || displayName}`);
+            const res = await api.post(`/reels/follow/influencer/${creatorTargetId}`);
+            const data = res.data || res;
+            const payload = data.data || data;
+            
+            if (typeof payload?.isFollowing === 'boolean') {
+                setIsFollowing(payload.isFollowing);
             }
-            localStorage.setItem('followed_creators', JSON.stringify(list));
-        } catch {}
+            if (typeof payload?.followersCount === 'number') {
+                setFollowersCount(payload.followersCount);
+            }
+            if (nextState) {
+                toast.success(`You are now following @${creatorData?.profile?.slug || displayName}!`);
+            } else {
+                toast.success(`Unfollowed @${creatorData?.profile?.slug || displayName}`);
+            }
+        } catch (err) {
+            // Rollback on failure
+            setIsFollowing(prevFollowing);
+            setFollowersCount(prevCount);
+            const errorMsg = err.response?.data?.message || err.message || 'Failed to update follow status.';
+            toast.error(errorMsg);
+        }
     };
 
     // Fetch creator profile details and reels from dedicated public backend endpoint
@@ -82,6 +117,9 @@ const CreatorProfile = () => {
                     setReelsList(data.reels || []);
                     if (typeof data.stats?.followersCount === 'number') {
                         setFollowersCount(data.stats.followersCount);
+                    }
+                    if (typeof data.stats?.isFollowing === 'boolean') {
+                        setIsFollowing(data.stats.isFollowing);
                     }
                 }
             } catch (err) {
@@ -159,22 +197,23 @@ const CreatorProfile = () => {
                             <div className="flex flex-wrap items-center gap-3">
                                 <h2 className="text-xl md:text-2xl font-light text-slate-800">{creatorData?.profile?.name || displayName}</h2>
                                 <div className="flex items-center gap-2 flex-wrap">
-                                    {isSelf ? (
-                                        <span className="px-3 py-1 bg-purple-50 text-purple-700 border border-purple-200 rounded-xl text-xs font-bold shadow-sm">
-                                            ✨ Your Showcase Profile
-                                        </span>
-                                    ) : (
-                                        <button 
-                                            onClick={handleToggleFollow}
-                                            className={`px-5 py-1.5 rounded-xl text-xs font-bold transition-all shadow-sm active:scale-95 cursor-pointer ${
-                                                isFollowing 
-                                                    ? 'bg-slate-100 text-slate-800 border border-slate-200 hover:bg-slate-200' 
-                                                    : 'bg-purple-600 text-white hover:bg-purple-700'
-                                            }`}
-                                        >
-                                            {isFollowing ? 'Following ✓' : 'Follow'}
-                                        </button>
-                                    )}
+                                    <button 
+                                        onClick={handleToggleFollow}
+                                        className={`px-5 py-1.5 rounded-xl text-xs font-bold transition-all shadow-sm active:scale-95 cursor-pointer group ${
+                                            isFollowing 
+                                                ? 'bg-slate-100 text-slate-800 border border-slate-200 hover:bg-red-50 hover:text-red-600 hover:border-red-200' 
+                                                : 'bg-purple-600 text-white hover:bg-purple-700'
+                                        }`}
+                                    >
+                                        {isFollowing ? (
+                                            <>
+                                                <span className="group-hover:hidden">Following ✓</span>
+                                                <span className="hidden group-hover:inline">Unfollow</span>
+                                            </>
+                                        ) : (
+                                            'Follow'
+                                        )}
+                                    </button>
                                 </div>
                             </div>
 
@@ -186,7 +225,7 @@ const CreatorProfile = () => {
                                 </div>
                                 <div className="text-center md:text-left">
                                     <span className="font-bold text-base md:text-lg text-slate-900">
-                                        {creatorData?.stats?.followersCount ?? followersCount} 
+                                        {followersCount} 
                                     </span>
                                     <span className="text-xs md:text-sm text-slate-600 font-medium">Followers</span>
                                 </div>

@@ -26,8 +26,8 @@ import { getPublicCreatorProfile } from '../modules/influencer/controllers/publi
 import { optionalAuth } from '../middlewares/authenticate.js';
 
 // GET /api/creator/:username & GET /api/influencer/public/:username (Public Isolated Creator Profile API)
-router.get('/creator/:username', getPublicCreatorProfile);
-router.get('/influencer/public/:username', getPublicCreatorProfile);
+router.get('/creator/:username', optionalAuth, getPublicCreatorProfile);
+router.get('/influencer/public/:username', optionalAuth, getPublicCreatorProfile);
 
 // GET /api/store/:slug (Public Storefront API)
 router.get('/store/:slug', storefrontController.getPublicStorefront);

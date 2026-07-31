@@ -22,5 +22,7 @@ router.delete('/comments/:commentId',                authenticate, ctrl.deleteCo
 router.post('/comments/:commentId/like',             authenticate, ctrl.likeComment);
 router.post('/comments/:commentId/report',           authenticate, ctrl.reportComment);
 router.post('/follow/vendor/:vendorId',              authenticate, ctrl.toggleFollowVendor);
+router.post('/follow/influencer/:influencerId',          authenticate, ctrl.toggleFollowInfluencer);
+router.get('/follow-status/influencer/:influencerId',   optionalAuth, ctrl.getInfluencerFollowStatus);
 
 export default router;
