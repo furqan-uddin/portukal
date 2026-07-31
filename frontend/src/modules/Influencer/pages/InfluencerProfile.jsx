@@ -8,9 +8,8 @@ import {
     UserSquare,
     Menu,
     X,
-    Heart,
-    MapPin,
-    Package,
+    Briefcase,
+    Link2,
     Check,
     Mail,
     Phone,
@@ -23,6 +22,7 @@ import {
     Camera,
     Edit3,
     Share2,
+    Eye,
     LogOut,
     ExternalLink,
     Instagram,
@@ -64,7 +64,7 @@ const SAMPLE_POSTS = [
 
 const InfluencerProfile = () => {
     const navigate = useNavigate();
-    const { influencer: storeInfluencer, setAuth, logout } = useInfluencerAuthStore();
+    const { influencer: storeInfluencer, logout } = useInfluencerAuthStore();
     const fileInputRef = useRef(null);
 
     const [profile, setProfile] = useState(null);
@@ -199,14 +199,14 @@ const InfluencerProfile = () => {
         try {
             const res = await updateInfluencerProfile(formData);
             const updated = res?.data || res;
-            toast.success('Profile updated successfully!');
             setProfile(updated);
-            if (storeInfluencer) {
-                setAuth({ ...storeInfluencer, ...updated });
-            }
+            useInfluencerAuthStore.setState({ influencer: updated });
+            toast.success('Profile updated successfully!');
             setShowEditModal(false);
         } catch (err) {
-            toast.error(err?.response?.data?.message || 'Failed to update profile.');
+            if (!err?.response?.data?.message) {
+                toast.error(err?.message || 'Failed to update profile.');
+            }
         } finally {
             setSaving(false);
         }
@@ -346,10 +346,11 @@ const InfluencerProfile = () => {
                                         <Edit3 size={14} /> Edit Profile
                                     </button>
                                     <button 
-                                        onClick={() => setShowContactSheet(true)}
-                                        className="px-4 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-xs font-bold transition-all active:scale-95"
+                                        onClick={() => navigate(`/creator/${formattedHandle}`)}
+                                        className="px-4 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-xs font-bold transition-all active:scale-95 flex items-center gap-1.5"
+                                        title="View Public Profile Showcase"
                                     >
-                                        Contact
+                                        <Eye size={14} /> View Showcase
                                     </button>
                                     {profile?.referralCode && (
                                         <button 
@@ -393,48 +394,37 @@ const InfluencerProfile = () => {
                         </div>
                     </div>
 
-                    {/* Quick Feature Action Circles Row (Orders, Wishlist / Affiliate, Addresses / Bank) */}
+                    {/* Creator Quick Feature Action Circles Row (Deal Requests, Affiliate Links, Wallet) */}
                     <div className="flex items-center justify-start gap-6 overflow-x-auto no-scrollbar py-4 mb-4 border-b border-slate-100">
-                        {/* Orders / Deal Requests Circle */}
+                        {/* 1. Deal Requests Circle */}
                         <div 
                             onClick={() => navigate('/influencer/deal-requests')}
                             className="flex flex-col items-center gap-1.5 cursor-pointer group shrink-0"
+                            title="View Vendor Collaboration Requests"
                         >
                             <div className="w-14 h-14 rounded-full bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-700 group-hover:scale-105 transition-transform shadow-sm">
-                                <Package size={22} />
+                                <Briefcase size={22} />
                             </div>
-                            <span className="text-[11px] font-bold text-slate-700">Orders</span>
+                            <span className="text-[11px] font-bold text-slate-700">Deal Requests</span>
                         </div>
 
-                        {/* Wishlist / Affiliate Links Circle */}
+                        {/* 2. Affiliate Links Circle */}
                         <div 
                             onClick={() => navigate('/influencer/affiliate-links')}
                             className="flex flex-col items-center gap-1.5 cursor-pointer group shrink-0"
-                        >
-                            <div className="w-14 h-14 rounded-full bg-pink-50 border border-pink-200 flex items-center justify-center text-pink-700 group-hover:scale-105 transition-transform shadow-sm">
-                                <Heart size={22} />
-                            </div>
-                            <span className="text-[11px] font-bold text-slate-700">Wishlist</span>
-                        </div>
-
-                        {/* Payouts / Bank Details Circle */}
-                        <div 
-                            onClick={() => {
-                                setEditFormTab('payouts');
-                                setShowEditModal(true);
-                            }}
-                            className="flex flex-col items-center gap-1.5 cursor-pointer group shrink-0"
+                            title="Manage Affiliate Products & Links"
                         >
                             <div className="w-14 h-14 rounded-full bg-emerald-50 border border-emerald-200 flex items-center justify-center text-emerald-700 group-hover:scale-105 transition-transform shadow-sm">
-                                <MapPin size={22} />
+                                <Link2 size={22} />
                             </div>
-                            <span className="text-[11px] font-bold text-slate-700">Addresses</span>
+                            <span className="text-[11px] font-bold text-slate-700">Affiliate Links</span>
                         </div>
 
-                        {/* Commission Wallet Circle */}
+                        {/* 3. Commission Wallet Circle */}
                         <div 
                             onClick={() => navigate('/influencer/wallet')}
                             className="flex flex-col items-center gap-1.5 cursor-pointer group shrink-0"
+                            title="View Earnings & Withdrawal Wallet"
                         >
                             <div className="w-14 h-14 rounded-full bg-purple-50 border border-purple-200 flex items-center justify-center text-purple-700 group-hover:scale-105 transition-transform shadow-sm">
                                 <CreditCard size={22} />
