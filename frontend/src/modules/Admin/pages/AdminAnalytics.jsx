@@ -10,7 +10,7 @@ import {
 } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 import KPICard from '../../Influencer/components/analytics/KPICard';
-import PlatformHealthCard from '../components/analytics/PlatformHealthCard';
+import PlatformHealthCard from '../components/Analytics/PlatformHealthCard';
 import ConversionFunnelCard from '../../Influencer/components/analytics/ConversionFunnelCard';
 import GeoHeatmapCard from '../../Influencer/components/analytics/GeoHeatmapCard';
 import LeaderboardTable from '../../Influencer/components/analytics/LeaderboardTable';
