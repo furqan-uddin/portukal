@@ -44,6 +44,19 @@ const VendorCreatorCollaborations = () => {
             const list = data.collaborations || data.data?.collaborations || [];
             setCollaborations(list);
             if (list.length > 0 && !selectedCollab) {
+                const urlParams = new URLSearchParams(window.location.search);
+                const targetInf = urlParams.get('influencer');
+                if (targetInf) {
+                    const match = list.find((c) => 
+                        String(c.influencerId?._id) === String(targetInf) || 
+                        c.influencerId?.slug === targetInf || 
+                        (c.influencerId?.name && c.influencerId.name.toLowerCase().includes(targetInf.toLowerCase()))
+                    );
+                    if (match) {
+                        loadCollabDetail(match._id);
+                        return;
+                    }
+                }
                 loadCollabDetail(list[0]._id);
             }
         } catch {

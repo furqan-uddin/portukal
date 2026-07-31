@@ -16,7 +16,24 @@ export const useReels = () => {
         setLoading(true);
         try {
             const data = await api.get('/reels/feed', { params: { page: pageNum, limit: 8 } });
-            const newReels = data.reels || [];
+            let newReels = data.reels || [];
+            
+            // Prioritize followed creators in feed
+            try {
+                const followedList = JSON.parse(localStorage.getItem('followed_creators') || '[]');
+                if (followedList.length > 0) {
+                    newReels = [...newReels].sort((a, b) => {
+                        const aHandle = a.influencerId?.slug || a.influencerId?.name?.toLowerCase() || '';
+                        const bHandle = b.influencerId?.slug || b.influencerId?.name?.toLowerCase() || '';
+                        const aFollowed = followedList.some(item => aHandle.includes(item) || a.influencerId?._id === item);
+                        const bFollowed = followedList.some(item => bHandle.includes(item) || b.influencerId?._id === item);
+                        if (aFollowed && !bFollowed) return -1;
+                        if (!aFollowed && bFollowed) return 1;
+                        return 0;
+                    });
+                }
+            } catch {}
+
             setReels((prev) => reset ? newReels : [...prev, ...newReels]);
             setHasMore(data.hasMore ?? newReels.length > 0);
             setPage(pageNum);

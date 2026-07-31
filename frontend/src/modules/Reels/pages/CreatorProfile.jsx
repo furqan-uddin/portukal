@@ -12,16 +12,45 @@ const CreatorProfile = () => {
     const { id } = useParams();
     const fileInputRef = useRef(null);
 
-    const rawId = String(id || 'test_user').trim();
+    const rawId = String(id || 'nansi_tiwari').trim();
     const formattedHandle = rawId.toLowerCase().replace(/\s+/g, '_');
-    const displayName = rawId.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+    const displayName = rawId === 'nansi_tiwari' || rawId === 'nansi' ? 'Nansi Tiwari' : rawId.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
 
     const [activeTab, setActiveTab] = useState('grid'); // 'grid' | 'reels' | 'tags'
-    const [isFollowing, setIsFollowing] = useState(false);
+
+    const checkIsFollowed = () => {
+        try {
+            const list = JSON.parse(localStorage.getItem('followed_creators') || '[]');
+            return list.includes(formattedHandle) || list.includes(rawId);
+        } catch {
+            return false;
+        }
+    };
+
+    const [isFollowing, setIsFollowing] = useState(checkIsFollowed);
+    const [followersCount, setFollowersCount] = useState(() => (checkIsFollowed() ? 10501 : 10500));
     const [showMenu, setShowMenu] = useState(false);
     const [showContactSheet, setShowContactSheet] = useState(false);
     const [reelsList, setReelsList] = useState([]);
+    const [activeReelModal, setActiveReelModal] = useState(null);
     const [loading, setLoading] = useState(false);
+
+    const handleToggleFollow = () => {
+        const nextState = !isFollowing;
+        setIsFollowing(nextState);
+        setFollowersCount((prev) => (nextState ? prev + 1 : prev - 1));
+        try {
+            let list = JSON.parse(localStorage.getItem('followed_creators') || '[]');
+            if (nextState) {
+                if (!list.includes(formattedHandle)) list.push(formattedHandle);
+                toast.success(`You are now following ${displayName}!`);
+            } else {
+                list = list.filter((item) => item !== formattedHandle && item !== rawId);
+                toast.success(`Unfollowed ${displayName}`);
+            }
+            localStorage.setItem('followed_creators', JSON.stringify(list));
+        } catch {}
+    };
 
     // Fetch creator's reels from API if available
     useEffect(() => {
@@ -126,25 +155,25 @@ const CreatorProfile = () => {
 
                         {/* Stats & Actions Section */}
                         <div className="flex-1 space-y-4">
-                            {/* Title & Main Buttons */}
+                            {/* Title & Follow Button */}
                             <div className="flex flex-wrap items-center gap-3">
                                 <h2 className="text-xl md:text-2xl font-light text-slate-800">{displayName}</h2>
                                 <div className="flex items-center gap-2 flex-wrap">
                                     <button 
-                                        onClick={() => setIsFollowing(!isFollowing)}
-                                        className={`px-5 py-1.5 rounded-lg text-xs font-bold transition-all shadow-sm ${
+                                        onClick={handleToggleFollow}
+                                        className={`px-5 py-1.5 rounded-xl text-xs font-bold transition-all shadow-sm active:scale-95 cursor-pointer ${
                                             isFollowing 
                                                 ? 'bg-slate-100 text-slate-800 border border-slate-200 hover:bg-slate-200' 
                                                 : 'bg-purple-600 text-white hover:bg-purple-700'
                                         }`}
                                     >
-                                        {isFollowing ? 'Following ✓' : 'Edit Profile'}
+                                        {isFollowing ? 'Following ✓' : 'Follow'}
                                     </button>
                                     <button 
-                                        onClick={() => setShowContactSheet(true)}
-                                        className="px-4 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-lg text-xs font-bold transition-all"
+                                        onClick={() => navigate(`/vendor/creator-collaborations?influencer=${creatorHandle}`)}
+                                        className="px-4 py-1.5 bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 rounded-xl text-xs font-bold transition-all active:scale-95 cursor-pointer flex items-center gap-1.5 shadow-sm"
                                     >
-                                        Contact
+                                        💬 Message
                                     </button>
                                 </div>
                             </div>
@@ -153,10 +182,12 @@ const CreatorProfile = () => {
                             <div className="flex items-center gap-8 py-1 border-y border-slate-100 md:border-none">
                                 <div className="text-center md:text-left">
                                     <span className="font-bold text-base md:text-lg text-slate-900">12 </span>
-                                    <span className="text-xs md:text-sm text-slate-600 font-medium">Posts</span>
+                                    <span className="text-xs md:text-sm text-slate-600 font-medium">Reels</span>
                                 </div>
                                 <div className="text-center md:text-left">
-                                    <span className="font-bold text-base md:text-lg text-slate-900">10.5K </span>
+                                    <span className="font-bold text-base md:text-lg text-slate-900">
+                                        {(followersCount / 1000).toFixed(1)}K 
+                                    </span>
                                     <span className="text-xs md:text-sm text-slate-600 font-medium">Followers</span>
                                 </div>
                                 <div className="text-center md:text-left">
@@ -168,7 +199,6 @@ const CreatorProfile = () => {
                             {/* Bio Description */}
                             <div className="space-y-1 text-xs md:text-sm text-slate-700">
                                 <div className="font-bold text-slate-900">{displayName}</div>
-                                <p className="text-slate-500 font-mono">test@example.com</p>
                                 <p className="text-slate-600">Official Creator & Brand Ambassador on Porutkal Marketplace ✨</p>
                             </div>
                         </div>
@@ -208,87 +238,88 @@ const CreatorProfile = () => {
                     </div>
                 </div>
 
-                {/* Grid Tabs */}
+                {/* Reels Header Bar ([🎬] REELS) */}
                 <div className="flex border-t border-slate-200">
-                    <button 
-                        onClick={() => setActiveTab('grid')}
-                        className={`flex-1 py-3.5 flex justify-center items-center gap-2 border-b-2 transition-all ${
-                            activeTab === 'grid' ? 'border-purple-600 text-purple-600' : 'border-transparent text-slate-400 hover:text-slate-600'
-                        }`}
-                    >
-                        <Grid size={20} />
-                        <span className="hidden md:inline text-xs font-bold uppercase tracking-wider">Posts</span>
-                    </button>
-                    <button 
-                        onClick={() => setActiveTab('reels')}
-                        className={`flex-1 py-3.5 flex justify-center items-center gap-2 border-b-2 transition-all ${
-                            activeTab === 'reels' ? 'border-purple-600 text-purple-600' : 'border-transparent text-slate-400 hover:text-slate-600'
-                        }`}
-                    >
+                    <div className="flex-1 py-3.5 flex justify-center items-center gap-2 border-b-2 border-purple-600 text-purple-600 font-bold text-xs uppercase tracking-wider">
                         <Clapperboard size={20} />
-                        <span className="hidden md:inline text-xs font-bold uppercase tracking-wider">Reels</span>
-                    </button>
-                    <button 
-                        onClick={() => setActiveTab('tags')}
-                        className={`flex-1 py-3.5 flex justify-center items-center gap-2 border-b-2 transition-all ${
-                            activeTab === 'tags' ? 'border-purple-600 text-purple-600' : 'border-transparent text-slate-400 hover:text-slate-600'
-                        }`}
-                    >
-                        <UserSquare size={20} />
-                        <span className="hidden md:inline text-xs font-bold uppercase tracking-wider">Tagged</span>
-                    </button>
+                        <span>Reels</span>
+                    </div>
                 </div>
 
-                {/* Grid Media Display */}
-                <div>
-                    {activeTab === 'grid' && (
-                        <div className="grid grid-cols-3 gap-1 md:gap-2 p-1">
-                            {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((item) => (
-                                <div key={item} className="aspect-square bg-slate-100 overflow-hidden relative group cursor-pointer rounded-lg border border-slate-200/60">
-                                    <img 
-                                        src={`https://picsum.photos/seed/grid-${item + 30}/400/400`} 
-                                        alt="Post" 
-                                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" 
-                                    />
+                {/* Reels 3-Column Video Media Grid */}
+                <div className="grid grid-cols-3 gap-1 md:gap-2 p-1 md:p-2">
+                    {(reelsList.length > 0 ? reelsList : [
+                        { id: 1, title: 'Summer Fashion Styling & OOTD Review ✨', views: '2.4K', videoUrl: 'https://cdn.pixabay.com/video/2025/03/25/267242_large.mp4', thumbnail: 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=600&auto=format&fit=crop&q=80' },
+                        { id: 2, title: 'Trendy Ethnic Outfit Haul & Try-On 🛍️', views: '1.8K', videoUrl: 'https://cdn.pixabay.com/video/2025/03/25/267241_large.mp4', thumbnail: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=600&auto=format&fit=crop&q=80' },
+                        { id: 3, title: 'Luxury Accessories & Watch Unboxing ⌚', views: '3.1K', videoUrl: 'https://cdn.pixabay.com/video/2024/03/29/206029_large.mp4', thumbnail: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600&auto=format&fit=crop&q=80' },
+                        { id: 4, title: 'Streetwear Styling Hacks for Autumn 🍂', views: '1.4K', videoUrl: 'https://cdn.pixabay.com/video/2024/05/06/210846_large.mp4', thumbnail: 'https://images.unsplash.com/photo-1483985988355-763728e1935b?w=600&auto=format&fit=crop&q=80' },
+                        { id: 5, title: 'Shoppable Footwear & Sneakers Showcase 👟', views: '4.2K', videoUrl: 'https://cdn.pixabay.com/video/2023/03/07/153579-805688725_large.mp4', thumbnail: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=600&auto=format&fit=crop&q=80' },
+                        { id: 6, title: 'Minimalist Festive Wear Lookbook ✨', views: '2.9K', videoUrl: 'https://cdn.pixabay.com/video/2025/03/25/267242_large.mp4', thumbnail: 'https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=600&auto=format&fit=crop&q=80' }
+                    ]).map((reel, idx) => (
+                        <div 
+                            key={reel._id || reel.id || idx} 
+                            onClick={() => setActiveReelModal(reel)}
+                            className="aspect-[9/16] bg-slate-900 overflow-hidden relative group cursor-pointer rounded-xl border border-slate-800 hover:border-purple-500 transition-all"
+                        >
+                            <img 
+                                src={reel.thumbnailUrl || reel.thumbnail || reel.image || `https://picsum.photos/seed/reel-${idx + 50}/300/533`} 
+                                alt="Reel" 
+                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" 
+                            />
+                            <div className="absolute inset-0 bg-black/30 group-hover:bg-black/10 transition-colors flex items-center justify-center">
+                                <div className="w-10 h-10 rounded-full bg-white/20 backdrop-blur-md border border-white/40 flex items-center justify-center text-white group-hover:scale-110 transition-transform">
+                                    <Clapperboard size={18} className="fill-white" />
                                 </div>
-                            ))}
-                        </div>
-                    )}
-
-                    {activeTab === 'reels' && (
-                        <div className="grid grid-cols-3 gap-1 md:gap-2 p-1">
-                            {(reelsList.length > 0 ? reelsList : [1, 2, 3, 4, 5, 6]).map((reel, idx) => (
-                                <div 
-                                    key={reel._id || idx} 
-                                    onClick={() => navigate('/reels')}
-                                    className="aspect-[9/16] bg-slate-900 overflow-hidden relative group cursor-pointer rounded-xl border border-slate-800"
-                                >
-                                    <img 
-                                        src={reel.thumbnailUrl || `https://picsum.photos/seed/reel-${idx + 50}/300/533`} 
-                                        alt="Reel" 
-                                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" 
-                                    />
-                                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent flex items-end p-2">
-                                        <span className="text-white text-[11px] font-extrabold flex items-center gap-1">
-                                            <Clapperboard size={12} /> 1.4K
-                                        </span>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    )}
-
-                    {activeTab === 'tags' && (
-                        <div className="flex flex-col items-center justify-center py-20 px-4 text-center">
-                            <div className="w-16 h-16 rounded-full border-2 border-slate-300 flex items-center justify-center mb-3 text-slate-400">
-                                <UserSquare size={32} />
                             </div>
-                            <h3 className="font-bold text-slate-800 text-base mb-1">Photos & Videos of You</h3>
-                            <p className="text-xs text-slate-500 max-w-sm">When creators or customers tag you in shoppable posts and reels, they will appear here.</p>
+                            <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent p-2">
+                                <span className="text-white text-[11px] font-extrabold flex items-center gap-1 drop-shadow">
+                                    <Clapperboard size={12} /> {reel.viewsCount || reel.views || '1.4K'}
+                                </span>
+                            </div>
                         </div>
-                    )}
+                    ))}
                 </div>
             </div>
+
+            {/* Video Reel Player Popup Modal */}
+            {activeReelModal && (
+                <div className="fixed inset-0 bg-black/90 backdrop-blur-md z-[150] flex items-center justify-center p-4">
+                    <div className="relative w-full max-w-sm aspect-[9/16] max-h-[85vh] bg-slate-950 rounded-3xl overflow-hidden shadow-2xl border border-slate-800 flex flex-col">
+                        {/* Header */}
+                        <div className="absolute top-0 inset-x-0 p-4 bg-gradient-to-b from-black/80 to-transparent z-20 flex items-center justify-between text-white">
+                            <div className="flex items-center gap-2.5">
+                                <div className="w-9 h-9 rounded-full bg-purple-600 overflow-hidden border border-white/40 font-bold flex items-center justify-center text-sm">
+                                    {displayName.charAt(0)}
+                                </div>
+                                <div>
+                                    <h4 className="font-bold text-xs leading-none">{displayName}</h4>
+                                    <span className="text-[10px] text-purple-300 font-semibold">{activeReelModal.views || '1.4K'} views</span>
+                                </div>
+                            </div>
+                            <button 
+                                onClick={() => setActiveReelModal(null)}
+                                className="w-8 h-8 rounded-full bg-black/50 text-white flex items-center justify-center hover:bg-white/20 transition-colors"
+                            >
+                                <X size={20} />
+                            </button>
+                        </div>
+
+                        {/* Video Element */}
+                        <video
+                            src={activeReelModal.videoUrl || activeReelModal.video?.secureUrl || 'https://cdn.pixabay.com/video/2025/03/25/267242_large.mp4'}
+                            autoPlay
+                            loop
+                            controls
+                            className="w-full h-full object-cover"
+                        />
+
+                        {/* Caption Overlay */}
+                        <div className="absolute bottom-12 inset-x-0 p-4 bg-gradient-to-t from-black/90 via-black/40 to-transparent z-20 text-white space-y-1 pointer-events-none">
+                            <p className="text-xs font-bold leading-snug drop-shadow">{activeReelModal.title || 'Creator Reel Video'}</p>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Side Menu Drawer */}
             {showMenu && (
@@ -310,42 +341,6 @@ const CreatorProfile = () => {
                                 className="w-full text-left px-4 py-3 text-xs font-bold text-slate-700 hover:bg-purple-50 hover:text-purple-700 rounded-xl transition-all flex items-center gap-2.5"
                             >
                                 <Clapperboard size={16} /> Explore Reels Marketplace
-                            </button>
-                            <button 
-                                onClick={() => { setShowMenu(false); setShowContactSheet(true); }}
-                                className="w-full text-left px-4 py-3 text-xs font-bold text-slate-700 hover:bg-purple-50 hover:text-purple-700 rounded-xl transition-all flex items-center gap-2.5"
-                            >
-                                <Mail size={16} /> Contact Support
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {/* Contact Bottom Sheet */}
-            {showContactSheet && (
-                <div className="fixed inset-0 z-[110] flex items-end justify-center">
-                    <div 
-                        className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" 
-                        onClick={() => setShowContactSheet(false)}
-                    />
-                    <div className="relative w-full max-w-lg bg-slate-900 text-white rounded-t-3xl p-6 z-10 shadow-2xl border-t border-slate-800 space-y-4">
-                        <div className="flex justify-between items-center pb-3 border-b border-slate-800">
-                            <h3 className="font-bold text-base text-purple-400">Contact Creator</h3>
-                            <button onClick={() => setShowContactSheet(false)} className="text-slate-400 hover:text-white"><X size={20} /></button>
-                        </div>
-                        <div className="space-y-3">
-                            <a 
-                                href="mailto:test@example.com" 
-                                className="flex items-center gap-3 p-3 bg-slate-800 rounded-xl hover:bg-slate-700 transition-colors text-xs font-semibold"
-                            >
-                                <Mail size={16} className="text-purple-400" /> test@example.com
-                            </a>
-                            <button 
-                                onClick={() => { toast.success('Contact request sent!'); setShowContactSheet(false); }}
-                                className="w-full flex items-center justify-center gap-2 p-3 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-xs font-bold shadow-md transition-all"
-                            >
-                                <Phone size={16} /> Request Direct Callback
                             </button>
                         </div>
                     </div>

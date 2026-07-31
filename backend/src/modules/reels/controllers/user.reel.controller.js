@@ -34,6 +34,7 @@ export const getFeed = asyncHandler(async (req, res) => {
 
     const filter = { status: 'approved', visibility: 'public', publishedAt: { $lte: new Date() } };
     if (category) filter.category = category;
+    if (req.query.influencerId) filter.influencerId = req.query.influencerId;
 
     // Get user's followed vendors to boost their reels
     let followedVendorIds = [];

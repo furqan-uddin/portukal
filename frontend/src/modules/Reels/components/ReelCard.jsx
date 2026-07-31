@@ -165,7 +165,6 @@ const ReelActions = ({ reel, onLike, onShare, onSave, onReport, onComment }) => 
 // ─── ReelCard ────────────────────────────────────────────────────────────────
 const ReelCard = ({ reel, toggleLike, shareReel, saveReel, reportReel, onView, onProductClick }) => {
     const [showComments, setShowComments] = useState(false);
-    const [isFollowing, setIsFollowing] = useState(reel.isFollowing || false);
     const videoRef = useRef(null);
     const navigate = useNavigate();
     const viewTrackedRef = useRef(false);
@@ -218,19 +217,53 @@ const ReelCard = ({ reel, toggleLike, shareReel, saveReel, reportReel, onView, o
     };
 
     // Resolve profile details
-    const displayName = reel.influencerId?.name || reel.vendorId?.storeName || reel.creatorName || 'Creator';
+    const displayName = reel.influencerId?.name || reel.vendorId?.storeName || reel.creatorName || 'Nansi Tiwari';
     const avatarUrl = reel.influencerId?.profileImage || reel.influencerId?.avatar || reel.vendorId?.logoUrl || reel.creatorAvatar || '';
-    const creatorHandle = reel.influencerId?.slug || displayName.toLowerCase().replace(/\s+/g, '_');
+    const rawHandle = reel.influencerId?.slug || displayName.toLowerCase().replace(/\s+/g, '_');
+    const creatorHandle = rawHandle.replace(/[^a-zA-Z0-9_]/g, '');
 
     const profileStoreLink = reel.influencerId
-        ? `/influencer/${creatorHandle}`
+        ? `/creator/${creatorHandle}`
         : reel.vendorId?.storefrontId?.slug
         ? `/store/${reel.vendorId.storefrontId.slug}`
         : reel.vendorId?._id || reel.vendorId?.id
         ? `/store/${reel.vendorId.slug || (reel.vendorId._id || reel.vendorId.id)}`
         : `/creator/${creatorHandle}`;
 
-    const handleOpenProfile = () => {
+    // Read initial follow status from localStorage
+    const getIsFollowed = () => {
+        try {
+            const followedList = JSON.parse(localStorage.getItem('followed_creators') || '[]');
+            return followedList.includes(creatorHandle) || followedList.includes(reel.influencerId?._id);
+        } catch {
+            return false;
+        }
+    };
+
+    const [isFollowing, setIsFollowing] = useState(() => reel.isFollowing || getIsFollowed());
+
+    const handleToggleFollow = (e) => {
+        e.stopPropagation();
+        const nextState = !isFollowing;
+        setIsFollowing(nextState);
+        try {
+            let followedList = JSON.parse(localStorage.getItem('followed_creators') || '[]');
+            if (nextState) {
+                if (!followedList.includes(creatorHandle)) followedList.push(creatorHandle);
+                if (reel.influencerId?._id && !followedList.includes(reel.influencerId._id)) {
+                    followedList.push(reel.influencerId._id);
+                }
+                toast.success(`You are now following ${displayName}!`);
+            } else {
+                followedList = followedList.filter(item => item !== creatorHandle && item !== reel.influencerId?._id);
+                toast.success(`Unfollowed ${displayName}`);
+            }
+            localStorage.setItem('followed_creators', JSON.stringify(followedList));
+        } catch {}
+    };
+
+    const handleOpenProfile = (e) => {
+        e.stopPropagation();
         if (profileStoreLink && profileStoreLink !== '#') {
             navigate(profileStoreLink);
         }
@@ -243,10 +276,16 @@ const ReelCard = ({ reel, toggleLike, shareReel, saveReel, reportReel, onView, o
             {/* Background Video */}
             <video
                 ref={videoRef}
-                className="h-full w-full object-cover"
+                className="h-full w-full object-cover cursor-pointer"
                 src={videoSrc}
                 poster={reel.thumbnailUrl}
                 loop muted autoPlay playsInline preload="auto"
+                onClick={() => {
+                    if (videoRef.current) {
+                        if (videoRef.current.paused) videoRef.current.play().catch(() => {});
+                        else videoRef.current.pause();
+                    }
+                }}
             />
 
             {/* Gradient Overlay */}
@@ -284,21 +323,21 @@ const ReelCard = ({ reel, toggleLike, shareReel, saveReel, reportReel, onView, o
                             className="font-bold text-white text-sm drop-shadow-md hover:underline cursor-pointer text-left flex items-center gap-1.5"
                         >
                             <span>{displayName}</span>
-                            {reel.influencerId && (
+                            {(reel.influencerId || displayName === 'Nansi Tiwari') && (
                                 <span className="text-[10px] bg-purple-600/90 text-white font-extrabold px-1.5 py-0.5 rounded-md shadow-sm">
                                     Creator ✨
                                 </span>
                             )}
                         </button>
                         <button 
-                            onClick={() => setIsFollowing(!isFollowing)}
-                            className={`px-2.5 py-0.5 rounded-lg text-xs font-bold transition-all ${
+                            onClick={handleToggleFollow}
+                            className={`px-3 py-1 rounded-lg text-xs font-bold transition-all shadow-md active:scale-95 cursor-pointer ${
                                 isFollowing 
-                                    ? 'bg-white/20 text-white border border-white/30' 
-                                    : 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-md'
+                                    ? 'bg-white/20 text-white border border-white/30 backdrop-blur-md' 
+                                    : 'bg-purple-600 hover:bg-purple-700 text-white'
                             }`}
                         >
-                            {isFollowing ? 'Following' : 'Follow'}
+                            {isFollowing ? 'Following ✓' : 'Follow'}
                         </button>
                     </div>
                 </div>
