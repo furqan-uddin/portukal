@@ -58,7 +58,7 @@ const CreatorProfile = () => {
         const fetchCreatorData = async () => {
             setLoading(true);
             try {
-                const res = await api.get('/reels/feed', { params: { limit: 12 } });
+                const res = await api.get('/reels/feed', { params: { limit: 12, influencerId: id } });
                 const list = res.reels || res.data?.reels || [];
                 if (isMounted) setReelsList(list);
             } catch {
@@ -181,7 +181,7 @@ const CreatorProfile = () => {
                             {/* Stats Counter Row */}
                             <div className="flex items-center gap-8 py-1 border-y border-slate-100 md:border-none">
                                 <div className="text-center md:text-left">
-                                    <span className="font-bold text-base md:text-lg text-slate-900">12 </span>
+                                    <span className="font-bold text-base md:text-lg text-slate-900">{reelsList.length} </span>
                                     <span className="text-xs md:text-sm text-slate-600 font-medium">Reels</span>
                                 </div>
                                 <div className="text-center md:text-left">
@@ -242,43 +242,48 @@ const CreatorProfile = () => {
                 <div className="flex border-t border-slate-200">
                     <div className="flex-1 py-3.5 flex justify-center items-center gap-2 border-b-2 border-purple-600 text-purple-600 font-bold text-xs uppercase tracking-wider">
                         <Clapperboard size={20} />
-                        <span>Reels</span>
+                        <span>Reels ({reelsList.length})</span>
                     </div>
                 </div>
 
-                {/* Reels 3-Column Video Media Grid */}
-                <div className="grid grid-cols-3 gap-1 md:gap-2 p-1 md:p-2">
-                    {(reelsList.length > 0 ? reelsList : [
-                        { id: 1, title: 'Summer Fashion Styling & OOTD Review ✨', views: '2.4K', videoUrl: 'https://cdn.pixabay.com/video/2025/03/25/267242_large.mp4', thumbnail: 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=600&auto=format&fit=crop&q=80' },
-                        { id: 2, title: 'Trendy Ethnic Outfit Haul & Try-On 🛍️', views: '1.8K', videoUrl: 'https://cdn.pixabay.com/video/2025/03/25/267241_large.mp4', thumbnail: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=600&auto=format&fit=crop&q=80' },
-                        { id: 3, title: 'Luxury Accessories & Watch Unboxing ⌚', views: '3.1K', videoUrl: 'https://cdn.pixabay.com/video/2024/03/29/206029_large.mp4', thumbnail: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600&auto=format&fit=crop&q=80' },
-                        { id: 4, title: 'Streetwear Styling Hacks for Autumn 🍂', views: '1.4K', videoUrl: 'https://cdn.pixabay.com/video/2024/05/06/210846_large.mp4', thumbnail: 'https://images.unsplash.com/photo-1483985988355-763728e1935b?w=600&auto=format&fit=crop&q=80' },
-                        { id: 5, title: 'Shoppable Footwear & Sneakers Showcase 👟', views: '4.2K', videoUrl: 'https://cdn.pixabay.com/video/2023/03/07/153579-805688725_large.mp4', thumbnail: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=600&auto=format&fit=crop&q=80' },
-                        { id: 6, title: 'Minimalist Festive Wear Lookbook ✨', views: '2.9K', videoUrl: 'https://cdn.pixabay.com/video/2025/03/25/267242_large.mp4', thumbnail: 'https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=600&auto=format&fit=crop&q=80' }
-                    ]).map((reel, idx) => (
-                        <div 
-                            key={reel._id || reel.id || idx} 
-                            onClick={() => setActiveReelModal(reel)}
-                            className="aspect-[9/16] bg-slate-900 overflow-hidden relative group cursor-pointer rounded-xl border border-slate-800 hover:border-purple-500 transition-all"
-                        >
-                            <img 
-                                src={reel.thumbnailUrl || reel.thumbnail || reel.image || `https://picsum.photos/seed/reel-${idx + 50}/300/533`} 
-                                alt="Reel" 
-                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" 
-                            />
-                            <div className="absolute inset-0 bg-black/30 group-hover:bg-black/10 transition-colors flex items-center justify-center">
-                                <div className="w-10 h-10 rounded-full bg-white/20 backdrop-blur-md border border-white/40 flex items-center justify-center text-white group-hover:scale-110 transition-transform">
-                                    <Clapperboard size={18} className="fill-white" />
+                {/* Reels 3-Column Video Media Grid or Empty State */}
+                {reelsList.length === 0 ? (
+                    <div className="py-16 text-center space-y-3 bg-slate-50 rounded-2xl border border-dashed border-slate-200 my-4 mx-2">
+                        <div className="w-14 h-14 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center mx-auto">
+                            <Clapperboard size={28} />
+                        </div>
+                        <div>
+                            <h3 className="font-bold text-slate-800 text-sm">No Reels Uploaded Yet 🎬</h3>
+                            <p className="text-xs text-slate-500 max-w-xs mx-auto mt-1">This creator has not uploaded any product reels yet.</p>
+                        </div>
+                    </div>
+                ) : (
+                    <div className="grid grid-cols-3 gap-1 md:gap-2 p-1 md:p-2">
+                        {reelsList.map((reel, idx) => (
+                            <div 
+                                key={reel._id || reel.id || idx} 
+                                onClick={() => setActiveReelModal(reel)}
+                                className="aspect-[9/16] bg-slate-900 overflow-hidden relative group cursor-pointer rounded-xl border border-slate-800 hover:border-purple-500 transition-all"
+                            >
+                                <img 
+                                    src={reel.thumbnailUrl || reel.thumbnail || reel.image || `https://picsum.photos/seed/reel-${idx + 50}/300/533`} 
+                                    alt="Reel" 
+                                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" 
+                                />
+                                <div className="absolute inset-0 bg-black/30 group-hover:bg-black/10 transition-colors flex items-center justify-center">
+                                    <div className="w-10 h-10 rounded-full bg-white/20 backdrop-blur-md border border-white/40 flex items-center justify-center text-white group-hover:scale-110 transition-transform">
+                                        <Clapperboard size={18} className="fill-white" />
+                                    </div>
+                                </div>
+                                <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent p-2">
+                                    <span className="text-white text-[11px] font-extrabold flex items-center gap-1 drop-shadow">
+                                        <Clapperboard size={12} /> {reel.viewsCount || reel.views || '1.4K'}
+                                    </span>
                                 </div>
                             </div>
-                            <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent p-2">
-                                <span className="text-white text-[11px] font-extrabold flex items-center gap-1 drop-shadow">
-                                    <Clapperboard size={12} /> {reel.viewsCount || reel.views || '1.4K'}
-                                </span>
-                            </div>
-                        </div>
-                    ))}
-                </div>
+                        ))}
+                    </div>
+                )}
             </div>
 
             {/* Video Reel Player Popup Modal */}

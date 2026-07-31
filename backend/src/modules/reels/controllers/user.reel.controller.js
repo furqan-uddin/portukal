@@ -6,6 +6,9 @@ import ReelInteraction from '../models/ReelInteraction.model.js';
 import ReelFollow from '../models/ReelFollow.model.js';
 import { aggregateDailyAnalytics } from '../services/reelAnalytics.service.js';
 
+import Influencer from '../../influencer/models/Influencer.model.js';
+import mongoose from 'mongoose';
+
 // Helper to get today's date bucket
 const today = () => new Date().toISOString().split('T')[0];
 
@@ -28,13 +31,32 @@ const getClientIP = (req) =>
  * Ranking: trendingScore desc (boosted if user follows vendor)
  */
 export const getFeed = asyncHandler(async (req, res) => {
-    const { page = 1, limit = 10, category } = req.query;
+    const { page = 1, limit = 10, category, status } = req.query;
     const userId = req.user?.id;
     const skip = (Number(page) - 1) * Number(limit);
 
-    const filter = { status: 'approved', visibility: 'public', publishedAt: { $lte: new Date() } };
+    const filter = { visibility: 'public', publishedAt: { $lte: new Date() } };
+    if (status && status !== 'all') {
+        filter.status = status;
+    } else if (!status) {
+        filter.status = 'approved';
+    }
+
     if (category) filter.category = category;
-    if (req.query.influencerId) filter.influencerId = req.query.influencerId;
+
+    const targetInf = req.query.influencerId || req.query.influencer || req.query.slug;
+    if (targetInf) {
+        if (mongoose.Types.ObjectId.isValid(targetInf)) {
+            filter.influencerId = targetInf;
+        } else {
+            const infDoc = await Influencer.findOne({ slug: targetInf });
+            if (infDoc) {
+                filter.influencerId = infDoc._id;
+            } else {
+                filter.influencerId = new mongoose.Types.ObjectId();
+            }
+        }
+    }
 
     // Get user's followed vendors to boost their reels
     let followedVendorIds = [];
