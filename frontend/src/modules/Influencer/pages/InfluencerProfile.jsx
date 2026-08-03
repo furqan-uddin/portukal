@@ -8,9 +8,8 @@ import {
     UserSquare,
     Menu,
     X,
-    Heart,
-    MapPin,
-    Package,
+    Briefcase,
+    Link2,
     Check,
     Mail,
     Phone,
@@ -23,6 +22,7 @@ import {
     Camera,
     Edit3,
     Share2,
+    Eye,
     LogOut,
     ExternalLink,
     Instagram,
@@ -64,7 +64,7 @@ const SAMPLE_POSTS = [
 
 const InfluencerProfile = () => {
     const navigate = useNavigate();
-    const { influencer: storeInfluencer, setAuth, logout } = useInfluencerAuthStore();
+    const { influencer: storeInfluencer, logout } = useInfluencerAuthStore();
     const fileInputRef = useRef(null);
 
     const [profile, setProfile] = useState(null);
@@ -107,60 +107,62 @@ const InfluencerProfile = () => {
         },
     });
 
-    const fetchProfile = async () => {
-        setLoading(true);
-        try {
-            const res = await getInfluencerProfile();
-            const data = res?.data || res;
-            setProfile(data);
-            setFormData({
-                name: data.name || '',
-                phone: data.phone || '',
-                category: data.category || '',
-                bio: data.bio || '',
-                location: data.location || '',
-                profileImage: data.profileImage || '',
-                socials: {
-                    instagram: data.socials?.instagram || '',
-                    youtube: data.socials?.youtube || '',
-                    tiktok: data.socials?.tiktok || '',
-                    website: data.socials?.website || '',
-                },
-                followersCount: {
-                    instagram: data.followersCount?.instagram || 0,
-                    youtube: data.followersCount?.youtube || 0,
-                    tiktok: data.followersCount?.tiktok || 0,
-                },
-                bankDetails: {
-                    accountHolderName: data.bankDetails?.accountHolderName || '',
-                    bankName: data.bankDetails?.bankName || '',
-                    accountNumber: data.bankDetails?.accountNumber || '',
-                    ifscCode: data.bankDetails?.ifscCode || '',
-                    upiId: data.bankDetails?.upiId || '',
-                    paypalEmail: data.bankDetails?.paypalEmail || '',
-                },
-            });
-        } catch (err) {
-            toast.error(err?.response?.data?.message || 'Failed to fetch profile details.');
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    // Fetch reels for Reels tab
+    // Fetch profile and influencer-specific reels for Reels tab
     useEffect(() => {
         let isMounted = true;
-        const fetchReels = async () => {
+        const loadProfileAndReels = async () => {
+            setLoading(true);
             try {
-                const res = await api.get('/reels/feed', { params: { limit: 12 } });
-                const list = res.reels || res.data?.reels || [];
-                if (isMounted) setReelsList(list);
-            } catch {
-                if (isMounted) setReelsList([]);
+                const res = await getInfluencerProfile();
+                const data = res?.data || res;
+                if (isMounted) {
+                    setProfile(data);
+                    setFormData({
+                        name: data.name || '',
+                        phone: data.phone || '',
+                        category: data.category || '',
+                        bio: data.bio || '',
+                        location: data.location || '',
+                        profileImage: data.profileImage || '',
+                        socials: {
+                            instagram: data.socials?.instagram || '',
+                            youtube: data.socials?.youtube || '',
+                            tiktok: data.socials?.tiktok || '',
+                            website: data.socials?.website || '',
+                        },
+                        followersCount: {
+                            instagram: data.followersCount?.instagram || 0,
+                            youtube: data.followersCount?.youtube || 0,
+                            tiktok: data.followersCount?.tiktok || 0,
+                        },
+                        bankDetails: {
+                            accountHolderName: data.bankDetails?.accountHolderName || '',
+                            bankName: data.bankDetails?.bankName || '',
+                            accountNumber: data.bankDetails?.accountNumber || '',
+                            ifscCode: data.bankDetails?.ifscCode || '',
+                            upiId: data.bankDetails?.upiId || '',
+                            paypalEmail: data.bankDetails?.paypalEmail || '',
+                        },
+                    });
+                }
+
+                // Fetch reels specifically for this logged-in influencer
+                if (data?._id) {
+                    try {
+                        const reelsRes = await api.get('/reels/feed', { params: { limit: 12, influencerId: data._id, status: 'all' } });
+                        const list = reelsRes.reels || reelsRes.data?.reels || [];
+                        if (isMounted) setReelsList(list);
+                    } catch {
+                        if (isMounted) setReelsList([]);
+                    }
+                }
+            } catch (err) {
+                toast.error(err?.response?.data?.message || 'Failed to fetch profile details.');
+            } finally {
+                if (isMounted) setLoading(false);
             }
         };
-        fetchProfile();
-        fetchReels();
+        loadProfileAndReels();
         return () => { isMounted = false; };
     }, []);
 
@@ -197,14 +199,14 @@ const InfluencerProfile = () => {
         try {
             const res = await updateInfluencerProfile(formData);
             const updated = res?.data || res;
-            toast.success('Profile updated successfully!');
             setProfile(updated);
-            if (storeInfluencer) {
-                setAuth({ ...storeInfluencer, ...updated });
-            }
+            useInfluencerAuthStore.setState({ influencer: updated });
+            toast.success('Profile updated successfully!');
             setShowEditModal(false);
         } catch (err) {
-            toast.error(err?.response?.data?.message || 'Failed to update profile.');
+            if (!err?.response?.data?.message) {
+                toast.error(err?.message || 'Failed to update profile.');
+            }
         } finally {
             setSaving(false);
         }
@@ -344,10 +346,11 @@ const InfluencerProfile = () => {
                                         <Edit3 size={14} /> Edit Profile
                                     </button>
                                     <button 
-                                        onClick={() => setShowContactSheet(true)}
-                                        className="px-4 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-xs font-bold transition-all active:scale-95"
+                                        onClick={() => navigate(`/creator/${formattedHandle}`)}
+                                        className="px-4 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-xs font-bold transition-all active:scale-95 flex items-center gap-1.5"
+                                        title="View Public Profile Showcase"
                                     >
-                                        Contact
+                                        <Eye size={14} /> View Showcase
                                     </button>
                                     {profile?.referralCode && (
                                         <button 
@@ -364,7 +367,7 @@ const InfluencerProfile = () => {
                             {/* Stats Row */}
                             <div className="flex items-center justify-around md:justify-start md:gap-10 py-2 border-y border-slate-100 md:border-none">
                                 <div className="text-center md:text-left">
-                                    <span className="font-extrabold text-base md:text-lg text-slate-900">12 </span>
+                                    <span className="font-extrabold text-base md:text-lg text-slate-900">{reelsList.length} </span>
                                     <span className="text-xs md:text-sm text-slate-600 font-medium">Reels</span>
                                 </div>
                                 <div className="text-center md:text-left">
@@ -391,48 +394,37 @@ const InfluencerProfile = () => {
                         </div>
                     </div>
 
-                    {/* Quick Feature Action Circles Row (Orders, Wishlist / Affiliate, Addresses / Bank) */}
+                    {/* Creator Quick Feature Action Circles Row (Deal Requests, Affiliate Links, Wallet) */}
                     <div className="flex items-center justify-start gap-6 overflow-x-auto no-scrollbar py-4 mb-4 border-b border-slate-100">
-                        {/* Orders / Deal Requests Circle */}
+                        {/* 1. Deal Requests Circle */}
                         <div 
                             onClick={() => navigate('/influencer/deal-requests')}
                             className="flex flex-col items-center gap-1.5 cursor-pointer group shrink-0"
+                            title="View Vendor Collaboration Requests"
                         >
                             <div className="w-14 h-14 rounded-full bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-700 group-hover:scale-105 transition-transform shadow-sm">
-                                <Package size={22} />
+                                <Briefcase size={22} />
                             </div>
-                            <span className="text-[11px] font-bold text-slate-700">Orders</span>
+                            <span className="text-[11px] font-bold text-slate-700">Deal Requests</span>
                         </div>
 
-                        {/* Wishlist / Affiliate Links Circle */}
+                        {/* 2. Affiliate Links Circle */}
                         <div 
                             onClick={() => navigate('/influencer/affiliate-links')}
                             className="flex flex-col items-center gap-1.5 cursor-pointer group shrink-0"
-                        >
-                            <div className="w-14 h-14 rounded-full bg-pink-50 border border-pink-200 flex items-center justify-center text-pink-700 group-hover:scale-105 transition-transform shadow-sm">
-                                <Heart size={22} />
-                            </div>
-                            <span className="text-[11px] font-bold text-slate-700">Wishlist</span>
-                        </div>
-
-                        {/* Payouts / Bank Details Circle */}
-                        <div 
-                            onClick={() => {
-                                setEditFormTab('payouts');
-                                setShowEditModal(true);
-                            }}
-                            className="flex flex-col items-center gap-1.5 cursor-pointer group shrink-0"
+                            title="Manage Affiliate Products & Links"
                         >
                             <div className="w-14 h-14 rounded-full bg-emerald-50 border border-emerald-200 flex items-center justify-center text-emerald-700 group-hover:scale-105 transition-transform shadow-sm">
-                                <MapPin size={22} />
+                                <Link2 size={22} />
                             </div>
-                            <span className="text-[11px] font-bold text-slate-700">Addresses</span>
+                            <span className="text-[11px] font-bold text-slate-700">Affiliate Links</span>
                         </div>
 
-                        {/* Commission Wallet Circle */}
+                        {/* 3. Commission Wallet Circle */}
                         <div 
                             onClick={() => navigate('/influencer/wallet')}
                             className="flex flex-col items-center gap-1.5 cursor-pointer group shrink-0"
+                            title="View Earnings & Withdrawal Wallet"
                         >
                             <div className="w-14 h-14 rounded-full bg-purple-50 border border-purple-200 flex items-center justify-center text-purple-700 group-hover:scale-105 transition-transform shadow-sm">
                                 <CreditCard size={22} />
@@ -446,31 +438,43 @@ const InfluencerProfile = () => {
                 <div className="flex border-t border-slate-200">
                     <div className="flex-1 py-3.5 flex justify-center items-center gap-2 border-b-2 border-purple-600 text-purple-600 font-bold text-xs uppercase tracking-wider">
                         <Clapperboard size={20} />
-                        <span>Reels</span>
+                        <span>Reels ({reelsList.length})</span>
                     </div>
                 </div>
 
-                {/* Reels 3-Column Video Media Grid */}
-                <div className="grid grid-cols-3 gap-1 md:gap-2 p-1 md:p-2">
-                    {(reelsList.length > 0 ? reelsList : SAMPLE_POSTS.slice(0, 9)).map((reel, idx) => (
-                        <div 
-                            key={reel._id || idx} 
-                            onClick={() => navigate('/influencer/reels')}
-                            className="aspect-[9/16] bg-slate-900 overflow-hidden relative group cursor-pointer rounded-xl border border-slate-800"
-                        >
-                            <img 
-                                src={reel.thumbnailUrl || reel.image || `https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=500&auto=format&fit=crop&q=80`} 
-                                alt="Reel" 
-                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" 
-                            />
-                            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent flex items-end p-2.5">
-                                <span className="text-white text-[11px] font-extrabold flex items-center gap-1 drop-shadow">
-                                    <Clapperboard size={12} /> {reel.viewsCount || '1.4K'}
-                                </span>
-                            </div>
+                {/* Reels 3-Column Video Media Grid or Empty State */}
+                {reelsList.length === 0 ? (
+                    <div className="py-16 text-center space-y-3 bg-slate-50 rounded-2xl border border-dashed border-slate-200 my-4 mx-2">
+                        <div className="w-14 h-14 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center mx-auto">
+                            <Clapperboard size={28} />
                         </div>
-                    ))}
-                </div>
+                        <div>
+                            <h3 className="font-bold text-slate-800 text-sm">No Reels Uploaded Yet 🎬</h3>
+                            <p className="text-xs text-slate-500 max-w-xs mx-auto mt-1">This creator has not uploaded any product reels yet.</p>
+                        </div>
+                    </div>
+                ) : (
+                    <div className="grid grid-cols-3 gap-1 md:gap-2 p-1 md:p-2">
+                        {reelsList.map((reel, idx) => (
+                            <div 
+                                key={reel._id || idx} 
+                                onClick={() => navigate('/influencer/reels')}
+                                className="aspect-[9/16] bg-slate-900 overflow-hidden relative group cursor-pointer rounded-xl border border-slate-800"
+                            >
+                                <img 
+                                    src={reel.thumbnailUrl || reel.image || `https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=500&auto=format&fit=crop&q=80`} 
+                                    alt="Reel" 
+                                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" 
+                                />
+                                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent flex items-end p-2.5">
+                                    <span className="text-white text-[11px] font-extrabold flex items-center gap-1 drop-shadow">
+                                        <Clapperboard size={12} /> {reel.viewsCount || '1.4K'}
+                                    </span>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                )}
             </div>
 
             {/* Edit Profile Full Modal / Drawer */}

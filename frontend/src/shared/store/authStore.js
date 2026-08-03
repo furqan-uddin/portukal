@@ -210,6 +210,7 @@ export const useAuthStore = create(
         });
         localStorage.removeItem('wishlist-storage');
         localStorage.removeItem('address-storage');
+        localStorage.removeItem('influencer-profile-storage');
       },
 
       // Update user profile
