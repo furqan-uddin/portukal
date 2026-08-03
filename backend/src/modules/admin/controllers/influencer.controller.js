@@ -3,6 +3,7 @@ import ApiResponse from '../../../utils/ApiResponse.js';
 import ApiError from '../../../utils/ApiError.js';
 import Influencer from '../../influencer/models/Influencer.model.js';
 import { sendEmail } from '../../../services/email.service.js';
+import { NotificationService } from '../../influencer/services/NotificationService.js';
 
 // GET /api/admin/influencers
 export const getAllInfluencers = asyncHandler(async (req, res) => {
@@ -190,6 +191,24 @@ export const updateInfluencerStatus = asyncHandler(async (req, res) => {
             subject: emailSubject,
             html: emailBody,
         }).catch((err) => console.error('Failed to send status update email:', err.message));
+    }
+
+    // In-App Notification
+    try {
+        await NotificationService.createNotification({
+            recipientType: 'influencer',
+            recipientId: influencer._id,
+            title: status === 'approved' ? '🎉 Application Approved!' : status === 'rejected' ? '⚠️ Application Update' : '🔒 Account Suspended',
+            message: status === 'approved' 
+                ? 'Your influencer application has been approved! You can now generate referral links and earn commissions.'
+                : status === 'rejected'
+                ? `Your application was not approved. Reason: ${influencer.rejectionReason}`
+                : 'Your creator account has been suspended by administration.',
+            category: 'account',
+            priority: status === 'approved' ? 'high' : 'normal',
+        });
+    } catch (e) {
+        console.error('Failed to create in-app notification:', e.message);
     }
 
     res.status(200).json(

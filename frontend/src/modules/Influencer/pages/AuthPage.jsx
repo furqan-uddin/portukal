@@ -9,6 +9,7 @@ import {
     LogIn,
     UserPlus,
 } from 'lucide-react';
+import { appLogo } from '../../../data/logos';
 import LoginForm from '../components/LoginForm';
 import RegisterForm from '../components/RegisterForm';
 import ForgotPasswordModal from '../components/ForgotPasswordModal';
@@ -42,8 +43,8 @@ const AuthPage = () => {
                     <div className="influencer-hero-bg-glow" />
 
                     <div className="influencer-brand-logo">
-                        <div className="w-10 h-10 rounded-xl bg-purple-600/30 border border-purple-400/40 flex items-center justify-center text-purple-300">
-                            <Sparkles className="w-5 h-5 text-purple-300" />
+                        <div className="w-10 h-10 rounded-xl bg-purple-600/30 border border-purple-400/40 flex items-center justify-center p-1.5 overflow-hidden">
+                            <img src={appLogo.src} alt="Porutkal" className="w-full h-full object-contain" />
                         </div>
                         <div>
                             <span>Porutkal</span> <span className="text-white font-normal opacity-90 text-lg">Influencers</span>
