@@ -6,6 +6,7 @@ import InfluencerWallet from '../../influencer/models/InfluencerWallet.model.js'
 import InfluencerWalletTransaction from '../../influencer/models/InfluencerWalletTransaction.model.js';
 import { SettlementService } from '../../influencer/services/SettlementService.js';
 import { roundVal } from '../../influencer/services/WalletService.js';
+import { NotificationService } from '../../influencer/services/NotificationService.js';
 import mongoose from 'mongoose';
 
 // GET /api/admin/withdrawals
@@ -192,6 +193,24 @@ export const updateWithdrawalStatus = asyncHandler(async (req, res) => {
 
         await withdrawal.save({ session });
         await session.commitTransaction();
+
+        // Dispatch In-App Notification to Influencer
+        try {
+            await NotificationService.createNotification({
+                recipientType: 'influencer',
+                recipientId: withdrawal.influencerId,
+                title: status === 'approved' ? '✅ Payout Approved' : status === 'paid' ? '💰 Payout Transferred!' : '❌ Payout Rejected',
+                message: status === 'approved'
+                    ? `Your withdrawal request of ₹${amount} has been approved by admin.`
+                    : status === 'paid'
+                    ? `₹${amount} has been transferred to your account (Ref UTR: ${bankTransactionId || 'N/A'}).`
+                    : `Your withdrawal request of ₹${amount} was rejected. Funds returned to your available balance.`,
+                category: 'financial',
+                priority: 'high',
+            });
+        } catch (e) {
+            console.error('Failed to create withdrawal notification:', e.message);
+        }
 
         res.status(200).json(new ApiResponse(200, { withdrawal }, `Withdrawal request marked as ${status}.`));
     } catch (err) {

@@ -29,7 +29,7 @@ const notificationSchema = new mongoose.Schema(
         },
         category: {
             type: String,
-            enum: ['commission', 'withdrawal', 'settlement', 'report', 'system', 'fraud', 'wallet'],
+            enum: ['commission', 'withdrawal', 'settlement', 'report', 'system', 'fraud', 'wallet', 'NEW_FOLLOWER', 'follower'],
             default: 'system',
             index: true,
         },

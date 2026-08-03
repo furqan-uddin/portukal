@@ -16,6 +16,9 @@ export const register = asyncHandler(async (req, res) => {
 
 export const getProfile = asyncHandler(async (req, res) => {
     const profile = await getProfileService(req.influencer._id);
+    console.log(`\n======================================================`);
+    console.log(`[Logged-in Profile Resolution] user: "${req.user?.id || 'N/A'}" => resolved Influencer _id: "${profile._id}" (slug: "${profile.slug}", name: "${profile.name}")`);
+    console.log(`======================================================\n`);
     res.status(200).json({
         success: true,
         data: profile,

@@ -2,6 +2,7 @@ import Influencer from '../models/Influencer.model.js';
 import User from '../../../models/User.model.js';
 import ApiError from '../../../utils/ApiError.js';
 import { sendEmail } from '../../../services/email.service.js';
+import { uploadToCloudinary } from '../../../services/upload.service.js';
 
 const generateUniqueSlug = async (name) => {
     let baseSlug = String(name)
@@ -176,7 +177,20 @@ export const updateProfileService = async (influencerId, updateData) => {
     if (updateData.name) influencer.name = updateData.name;
     if (updateData.bio !== undefined) influencer.bio = updateData.bio;
     if (updateData.followers !== undefined) influencer.followers = updateData.followers;
-    if (updateData.profileImage !== undefined) influencer.profileImage = updateData.profileImage;
+
+    if (updateData.profileImage) {
+        if (String(updateData.profileImage).startsWith('data:image/')) {
+            try {
+                const uploaded = await uploadToCloudinary(updateData.profileImage, 'influencers/avatars');
+                influencer.profileImage = uploaded.url;
+            } catch (err) {
+                console.error('Failed to upload base64 avatar to Cloudinary:', err.message);
+                influencer.profileImage = updateData.profileImage;
+            }
+        } else {
+            influencer.profileImage = updateData.profileImage;
+        }
+    }
 
     if (updateData.socialLinks) {
         influencer.socialLinks = {
@@ -186,5 +200,15 @@ export const updateProfileService = async (influencerId, updateData) => {
     }
 
     await influencer.save();
+
+    if (influencer.user) {
+        const userUpdates = {};
+        if (influencer.name) userUpdates.name = influencer.name;
+        if (influencer.profileImage) userUpdates.avatar = influencer.profileImage;
+        if (Object.keys(userUpdates).length > 0) {
+            await User.findByIdAndUpdate(influencer.user, userUpdates).catch(() => null);
+        }
+    }
+
     return influencer;
 };

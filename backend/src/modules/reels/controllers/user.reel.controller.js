@@ -6,6 +6,13 @@ import ReelInteraction from '../models/ReelInteraction.model.js';
 import ReelFollow from '../models/ReelFollow.model.js';
 import { aggregateDailyAnalytics } from '../services/reelAnalytics.service.js';
 
+import User from '../../../models/User.model.js';
+import FollowAnalytics from '../../../models/FollowAnalytics.model.js';
+import { createNotification } from '../../../services/notification.service.js';
+import { NotificationService } from '../../influencer/services/NotificationService.js';
+import Influencer from '../../influencer/models/Influencer.model.js';
+import mongoose from 'mongoose';
+
 // Helper to get today's date bucket
 const today = () => new Date().toISOString().split('T')[0];
 
@@ -28,13 +35,32 @@ const getClientIP = (req) =>
  * Ranking: trendingScore desc (boosted if user follows vendor)
  */
 export const getFeed = asyncHandler(async (req, res) => {
-    const { page = 1, limit = 10, category } = req.query;
+    const { page = 1, limit = 10, category, status } = req.query;
     const userId = req.user?.id;
     const skip = (Number(page) - 1) * Number(limit);
 
-    const filter = { status: 'approved', visibility: 'public', publishedAt: { $lte: new Date() } };
+    const filter = { visibility: 'public', publishedAt: { $lte: new Date() } };
+    if (status && status !== 'all') {
+        filter.status = status;
+    } else if (!status) {
+        filter.status = 'approved';
+    }
+
     if (category) filter.category = category;
-    if (req.query.influencerId) filter.influencerId = req.query.influencerId;
+
+    const targetInf = req.query.influencerId || req.query.influencer || req.query.slug;
+    if (targetInf) {
+        if (mongoose.Types.ObjectId.isValid(targetInf)) {
+            filter.influencerId = targetInf;
+        } else {
+            const infDoc = await Influencer.findOne({ slug: targetInf });
+            if (infDoc) {
+                filter.influencerId = infDoc._id;
+            } else {
+                filter.influencerId = new mongoose.Types.ObjectId();
+            }
+        }
+    }
 
     // Get user's followed vendors to boost their reels
     let followedVendorIds = [];
@@ -366,4 +392,228 @@ export const toggleFollowVendor = asyncHandler(async (req, res) => {
 export const getReelCategories = asyncHandler(async (req, res) => {
     const categories = await Reel.distinct('category', { status: 'approved', category: { $ne: null } });
     res.status(200).json(new ApiResponse(200, categories.filter(Boolean), 'Categories fetched.'));
+});
+
+/**
+ * POST /api/reels/follow/influencer/:influencerId
+ * Toggle follow/unfollow for an influencer profile.
+ * Handled inside a MongoDB session transaction with atomic count reconciliation,
+ * rich NEW_FOLLOWER notification creation, real-time Socket emit, and daily analytics logging.
+ */
+export const toggleFollowInfluencer = asyncHandler(async (req, res) => {
+    if (!req.user) throw new ApiError(401, 'Authentication required to follow creators.');
+
+    const { influencerId } = req.params;
+    const userId = req.user.id || req.user._id;
+
+    if (!influencerId) {
+        throw new ApiError(400, 'Creator ID is required.');
+    }
+
+    // 1. Verify creator exists (by _id or user or slug)
+    let influencer = null;
+    if (mongoose.Types.ObjectId.isValid(influencerId)) {
+        influencer = await Influencer.findById(influencerId);
+    }
+    if (!influencer) {
+        influencer = await Influencer.findOne({ $or: [{ slug: influencerId }, { user: influencerId }] });
+    }
+    if (!influencer) {
+        throw new ApiError(404, 'Creator profile not found.');
+    }
+    if (influencer.status === 'suspended' || influencer.status === 'rejected' || influencer.isActive === false) {
+        throw new ApiError(403, 'This creator account is currently unavailable.');
+    }
+
+    const targetInfluencerId = influencer._id;
+
+    const dateStr = new Date().toISOString().split('T')[0];
+
+    // Attempt MongoDB session transaction (gracefully fallback if standalone MongoDB)
+    let session = null;
+    let useTransaction = false;
+    try {
+        session = await mongoose.startSession();
+        session.startTransaction();
+        useTransaction = true;
+    } catch {
+        session = null;
+        useTransaction = false;
+    }
+
+    try {
+        const sessionOption = useTransaction ? { session } : {};
+
+        // Check if already following
+        const existingFollow = await ReelFollow.findOne({
+            followerId: userId,
+            entityId: targetInfluencerId,
+            entityType: 'influencer',
+        }, null, sessionOption);
+
+        if (existingFollow) {
+            // UNFOLLOW FLOW
+            await ReelFollow.deleteOne({ _id: existingFollow._id }, sessionOption);
+
+            // Reconcile followers count from source of truth collection
+            const followersCount = await ReelFollow.countDocuments(
+                { entityId: targetInfluencerId, entityType: 'influencer' },
+                sessionOption
+            );
+            const userFollowingCount = await ReelFollow.countDocuments(
+                { followerId: userId },
+                sessionOption
+            );
+
+            // Update cached counters atomically
+            await Influencer.findByIdAndUpdate(
+                targetInfluencerId,
+                { $set: { followersCount: followersCount, followers: followersCount } },
+                sessionOption
+            );
+            await User.findByIdAndUpdate(
+                userId,
+                { $set: { followingCount: userFollowingCount } },
+                sessionOption
+            );
+
+            // Log daily analytics unfollow
+            await FollowAnalytics.findOneAndUpdate(
+                { influencerId: targetInfluencerId, dateStr },
+                { $inc: { unfollows: 1, netGrowth: -1 } },
+                { upsert: true, new: true, ...sessionOption }
+            );
+
+            if (useTransaction && session) await session.commitTransaction();
+
+            return res.status(200).json(
+                new ApiResponse(
+                    200,
+                    { isFollowing: false, followersCount, followingCount: userFollowingCount },
+                    `Unfollowed @${influencer.slug || influencer.name}.`
+                )
+            );
+        } else {
+            // FOLLOW FLOW
+            await ReelFollow.create(
+                [
+                    {
+                        followerId: userId,
+                        followerType: 'user',
+                        entityId: targetInfluencerId,
+                        entityType: 'influencer',
+                    },
+                ],
+                sessionOption
+            );
+
+            // Reconcile followers count from source of truth collection
+            const followersCount = await ReelFollow.countDocuments(
+                { entityId: targetInfluencerId, entityType: 'influencer' },
+                sessionOption
+            );
+            const userFollowingCount = await ReelFollow.countDocuments(
+                { followerId: userId },
+                sessionOption
+            );
+
+            // Update cached counters atomically
+            await Influencer.findByIdAndUpdate(
+                targetInfluencerId,
+                { $set: { followersCount: followersCount, followers: followersCount } },
+                sessionOption
+            );
+            await User.findByIdAndUpdate(
+                userId,
+                { $set: { followingCount: userFollowingCount } },
+                sessionOption
+            );
+
+            // Log daily analytics follow
+            await FollowAnalytics.findOneAndUpdate(
+                { influencerId: targetInfluencerId, dateStr },
+                { $inc: { newFollowers: 1, netGrowth: 1 } },
+                { upsert: true, new: true, ...sessionOption }
+            );
+
+            if (useTransaction && session) await session.commitTransaction();
+
+            // Send rich NEW_FOLLOWER notification to creator asynchronously
+            const followerUser = await User.findById(userId).select('name avatar email').lean();
+            const followerName = followerUser?.name || 'A user';
+            const followerAvatar = followerUser?.avatar || '';
+
+            NotificationService.createNotification({
+                recipientId: targetInfluencerId,
+                recipientType: 'influencer',
+                title: 'New Follower 🔔',
+                message: `${followerName} started following you.`,
+                category: 'NEW_FOLLOWER',
+                data: {
+                    actorId: userId.toString(),
+                    actorName: followerName,
+                    actorAvatar: followerAvatar,
+                    creatorId: targetInfluencerId.toString(),
+                    notificationType: 'NEW_FOLLOWER',
+                },
+            }).catch((err) => console.error('[Follow Notification Error]:', err.message));
+
+            return res.status(200).json(
+                new ApiResponse(
+                    200,
+                    { isFollowing: true, followersCount, followingCount: userFollowingCount },
+                    `You are now following @${influencer.slug || influencer.name}!`
+                )
+            );
+        }
+    } catch (error) {
+        if (useTransaction && session) await session.abortTransaction();
+        throw error;
+    } finally {
+        if (session) session.endSession();
+    }
+});
+
+/**
+ * GET /api/reels/follow-status/influencer/:influencerId
+ * Check if the authenticated user is currently following the specified influencer
+ */
+export const getInfluencerFollowStatus = asyncHandler(async (req, res) => {
+    const { influencerId } = req.params;
+    const userId = req.user?.id || req.user?._id;
+
+    let influencer = null;
+    if (mongoose.Types.ObjectId.isValid(influencerId)) {
+        influencer = await Influencer.findById(influencerId);
+    }
+    if (!influencer) {
+        influencer = await Influencer.findOne({ $or: [{ slug: influencerId }, { user: influencerId }] });
+    }
+    if (!influencer) {
+        throw new ApiError(404, 'Creator profile not found.');
+    }
+
+    const targetInfluencerId = influencer._id;
+
+    const followersCount = await ReelFollow.countDocuments({
+        entityId: targetInfluencerId,
+        entityType: 'influencer',
+    });
+
+    let isFollowing = false;
+    if (userId) {
+        const followDoc = await ReelFollow.findOne({
+            followerId: userId,
+            entityId: targetInfluencerId,
+            entityType: 'influencer',
+        });
+        isFollowing = !!followDoc;
+    }
+
+    res.status(200).json(
+        new ApiResponse(200, {
+            isFollowing,
+            followersCount,
+        }, 'Follow status fetched.')
+    );
 });
