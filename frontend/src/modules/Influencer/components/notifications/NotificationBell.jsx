@@ -10,6 +10,9 @@ import {
     archiveNotification,
 } from '../../services/notificationService';
 
+import { getSocket, joinRoom } from '../../../../shared/utils/socket';
+import { useInfluencerAuth } from '../../hooks/useInfluencerAuth';
+
 const formatDateTime = (dateString) => {
     return new Date(dateString).toLocaleString('en-US', {
         month: 'short',
@@ -25,6 +28,7 @@ const getNotificationColor = (type) => {
         commission: "bg-emerald-100 text-emerald-600",
         withdrawal: "bg-indigo-100 text-indigo-600",
         report: "bg-purple-100 text-purple-600",
+        NEW_FOLLOWER: "bg-purple-100 text-purple-700 font-bold",
         system: "bg-gray-100 text-gray-600",
     };
     return colors[type] || colors.system;
@@ -32,6 +36,7 @@ const getNotificationColor = (type) => {
 
 const NotificationBell = () => {
     const navigate = useNavigate();
+    const { influencer } = useInfluencerAuth();
     const [isOpen, setIsOpen] = useState(false);
     const [notifications, setNotifications] = useState([]);
     const [unreadCount, setUnreadCount] = useState(0);
@@ -51,8 +56,36 @@ const NotificationBell = () => {
     useEffect(() => {
         fetchNotifications();
         const interval = setInterval(fetchNotifications, 15000);
+
+        // Socket.IO real-time notification listener
+        const token = localStorage.getItem('influencerToken') || localStorage.getItem('token');
+        const socket = getSocket(token);
+
+        if (socket && influencer?._id) {
+            const roomName = `influencer_${influencer._id}`;
+            joinRoom(roomName);
+
+            const handleNewNotification = (newNotif) => {
+                if (!newNotif) return;
+                setNotifications((prev) => [newNotif, ...prev.filter(n => n._id !== newNotif._id)]);
+                setUnreadCount((prev) => prev + 1);
+                toast.success(`🔔 ${newNotif.title || 'Notification'}: ${newNotif.message}`);
+            };
+
+            socket.on('new_follower', handleNewNotification);
+            socket.on('new_notification', handleNewNotification);
+            socket.on('notification', handleNewNotification);
+
+            return () => {
+                interval && clearInterval(interval);
+                socket.off('new_follower', handleNewNotification);
+                socket.off('new_notification', handleNewNotification);
+                socket.off('notification', handleNewNotification);
+            };
+        }
+
         return () => clearInterval(interval);
-    }, []);
+    }, [influencer?._id]);
 
     useEffect(() => {
         const handleClickOutside = (event) => {
