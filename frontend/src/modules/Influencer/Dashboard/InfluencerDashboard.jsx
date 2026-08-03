@@ -21,6 +21,8 @@ import {
 import { useInfluencerAuth } from '../hooks/useInfluencerAuth';
 import '../styles/influencerAuth.css';
 
+import { appLogo } from '../../../data/logos';
+
 const InfluencerDashboard = () => {
     const navigate = useNavigate();
     const { influencer, status, fetchProfile, logout } = useInfluencerAuth();
@@ -39,8 +41,8 @@ const InfluencerDashboard = () => {
             {/* Top Navigation Header */}
             <header className="bg-white border-b border-slate-200 sticky top-0 z-20 px-6 py-4 flex items-center justify-between shadow-sm">
                 <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-xl bg-purple-600 flex items-center justify-center text-white font-bold shadow-md shadow-purple-200">
-                        <Sparkles className="w-5 h-5" />
+                    <div className="w-9 h-9 rounded-xl bg-purple-600 flex items-center justify-center p-1.5 overflow-hidden shadow-md shadow-purple-200">
+                        <img src={appLogo.src} alt="Porutkal" className="w-full h-full object-contain" />
                     </div>
                     <div>
                         <h1 className="font-extrabold text-lg text-slate-900 leading-tight">Porutkal Influencer Portal</h1>
