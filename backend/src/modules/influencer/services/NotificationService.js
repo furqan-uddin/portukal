@@ -1,6 +1,7 @@
 import Notification from '../models/Notification.model.js';
 import Influencer from '../models/Influencer.model.js';
 import Vendor from '../../../models/Vendor.model.js';
+import { emitToRoom } from '../../../services/socket.service.js';
 
 export class NotificationService {
     /**
@@ -30,10 +31,14 @@ export class NotificationService {
             data,
         });
 
-        // Optional: Trigger socket broadcast if socket server is attached
-        if (global.io) {
-            const room = recipientId ? `${recipientType}_${recipientId}` : `room_${recipientType}`;
-            global.io.to(room).emit('notification:new', notification);
+        // Trigger real-time socket broadcast to recipient room
+        if (recipientId) {
+            const room = `${recipientType}_${recipientId}`;
+            emitToRoom(room, 'notification', notification);
+            emitToRoom(room, 'new_notification', notification);
+            if (category === 'NEW_FOLLOWER' || category === 'follower') {
+                emitToRoom(room, 'new_follower', notification);
+            }
         }
 
         return notification;

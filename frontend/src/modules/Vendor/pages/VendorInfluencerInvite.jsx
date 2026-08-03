@@ -451,16 +451,6 @@ const VendorInfluencerInvite = () => {
                         <div className="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50 shrink-0">
                             <div className="flex items-center gap-2">
                                 <span className="font-bold text-xs uppercase tracking-wider text-slate-600">Influencer Profile Preview</span>
-                                <button
-                                    onClick={() => {
-                                        const slug = viewProfileModal.slug || viewProfileModal._id;
-                                        setViewProfileModal(null);
-                                        navigate(`/creator/${slug}`);
-                                    }}
-                                    className="text-[11px] font-bold text-purple-600 hover:text-purple-700 underline"
-                                >
-                                    Open Full Page ↗
-                                </button>
                             </div>
                             <button 
                                 onClick={() => setViewProfileModal(null)}
